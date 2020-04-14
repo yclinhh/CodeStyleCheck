@@ -34,8 +34,7 @@ class Ui_MainWindow(object):
         self.textBrowser.setFont(font)
         self.textBrowser.setObjectName("textBrowser")
         self.horizontalLayout.addWidget(self.textBrowser)
-
-
+        '''
         self.plainTextEdit = QtWidgets.QPlainTextEdit(self.tab)
         font = QtGui.QFont()
         font.setFamily("Times New Roman")
@@ -43,7 +42,8 @@ class Ui_MainWindow(object):
         self.plainTextEdit.setFont(font)
         self.plainTextEdit.setObjectName("plainTextEdit")
         self.horizontalLayout.addWidget(self.plainTextEdit)
-
+        
+        '''
 
         self.tabWidget.addTab(self.tab, "")
         self.gridLayout.addWidget(self.tabWidget, 0, 0, 1, 1)

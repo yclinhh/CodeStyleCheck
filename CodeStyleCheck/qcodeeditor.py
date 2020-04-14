@@ -13,7 +13,7 @@ import sys
 
 
 class QCodeEditor(QPlainTextEdit):
-    class NumberBar(QWidget):
+    '''class NumberBar(QWidget):
 
         def __init__(self, editor):
             #QWidget.__init__(self, editor)
@@ -70,7 +70,7 @@ class QCodeEditor(QPlainTextEdit):
                 self.font.setPointSize(fontSize)
                 self.font.setStyle(QFont.StyleNormal)
                 self.updateWidth()
-
+'''
     def __init__(self):
 
         super(QCodeEditor, self).__init__()
@@ -78,7 +78,7 @@ class QCodeEditor(QPlainTextEdit):
 
         self.setFont(QFont("Ubuntu Mono", 12))
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
-        self.number_bar = self.NumberBar(self)
+        #self.number_bar = self.NumberBar(self)
         self.currentLineNumber = None
         self.cursorPositionChanged.connect(self.highligtCurrentLine)
         self.setViewportMargins(40, 0, 0, 0)
@@ -86,8 +86,8 @@ class QCodeEditor(QPlainTextEdit):
 
     def resizeEvent(self, *e):
         cr = self.contentsRect()
-        rec = QRect(cr.left(), cr.top(), self.number_bar.getWidth(), cr.height())
-        self.number_bar.setGeometry(rec)
+       # rec = QRect(cr.left(), cr.top(), self.number_bar.getWidth(), cr.height())
+       # self.number_bar.setGeometry(rec)
 
         QPlainTextEdit.resizeEvent(self, *e)
 

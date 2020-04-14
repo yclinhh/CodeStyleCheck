@@ -52,7 +52,11 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             f = open(file_path[0], encoding='utf-8', mode='r+')
             with f:
                 data = f.read()
+                '''
                 self.plainTextEdit.appendPlainText(data)
+                
+                '''
+                self.ff.appendPlainText(data)
                 print(data)
 
     # 打开文件
