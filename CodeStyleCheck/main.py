@@ -6,15 +6,10 @@
 
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget
-from GUI.main_window_show import QFileDialogDemo
+from CodeStyleCheck.GUI.main_window_show import QMyWindow
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ui = QFileDialogDemo()
+    ui = QMyWindow()
     ui.show()
     sys.exit(app.exec_())
-
-    '''
-    with open('E:/林.指针/c++/程序片段练习/从小到大输出/从小到大输出/从小到大输出.cpp','r+') as f:
-        print(f.read())
-    '''

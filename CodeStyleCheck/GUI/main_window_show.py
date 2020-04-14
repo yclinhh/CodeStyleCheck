@@ -11,9 +11,9 @@ from PyQt5.QtWidgets import *
 from CodeStyleCheck.GUI.main_window import Ui_MainWindow
 
 
-class QFileDialogDemo(QMainWindow, Ui_MainWindow):
+class QMyWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
-        super(QFileDialogDemo, self).__init__()
+        super(QMyWindow, self).__init__()
         self.setupUi(self)
         self.initUI()
 

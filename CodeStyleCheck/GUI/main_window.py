@@ -24,9 +24,8 @@ class Ui_MainWindow(object):
         self.tab.setObjectName("tab")
         self.horizontalLayout = QtWidgets.QHBoxLayout(self.tab)
         self.horizontalLayout.setObjectName("horizontalLayout")
+
         self.textBrowser = QtWidgets.QTextBrowser(self.tab)
-
-
         self.textBrowser.setMaximumSize(QtCore.QSize(200, 16777215))
         font = QtGui.QFont()
         font.setFamily("Times New Roman")
