@@ -6,7 +6,7 @@
 
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget
-from CodeStyleCheck.GUI.main_window_show import QMyWindow
+from CodeStyleCheck.GUI.main_window_show import QMyWindow, QCodeEditor
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

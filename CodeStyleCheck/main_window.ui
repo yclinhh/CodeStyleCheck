@@ -100,80 +100,86 @@
     <property name="title">
      <string>文件</string>
     </property>
-    <addaction name="action"/>
-    <addaction name="action_2"/>
-    <addaction name="action_3"/>
+    <addaction name="action_open"/>
+    <addaction name="action_save"/>
+    <addaction name="action_close"/>
+    <addaction name="action_quit"/>
    </widget>
    <widget class="QMenu" name="menu_2">
     <property name="title">
      <string>配置</string>
     </property>
-    <addaction name="action_4"/>
-    <addaction name="action_5"/>
-    <addaction name="action_6"/>
-    <addaction name="action_7"/>
+    <addaction name="action_view"/>
+    <addaction name="action_new"/>
+    <addaction name="action_edit"/>
+    <addaction name="action_config"/>
    </widget>
    <widget class="QMenu" name="menu_3">
     <property name="title">
      <string>分析</string>
     </property>
-    <addaction name="action_8"/>
-    <addaction name="action_9"/>
-    <addaction name="action_10"/>
+    <addaction name="action_run"/>
+    <addaction name="action_result"/>
+    <addaction name="action_compare"/>
    </widget>
    <addaction name="menu"/>
    <addaction name="menu_2"/>
    <addaction name="menu_3"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="action">
+  <action name="action_open">
    <property name="text">
     <string>打开 </string>
    </property>
   </action>
-  <action name="action_2">
+  <action name="action_close">
    <property name="text">
     <string>关闭</string>
    </property>
   </action>
-  <action name="action_3">
+  <action name="action_quit">
    <property name="text">
     <string>退出</string>
    </property>
   </action>
-  <action name="action_4">
+  <action name="action_view">
    <property name="text">
     <string>查看规则</string>
    </property>
   </action>
-  <action name="action_5">
+  <action name="action_new">
    <property name="text">
     <string>新建规则</string>
    </property>
   </action>
-  <action name="action_6">
+  <action name="action_edit">
    <property name="text">
     <string>编辑规则</string>
    </property>
   </action>
-  <action name="action_7">
+  <action name="action_config">
    <property name="text">
     <string>配置规则</string>
    </property>
   </action>
-  <action name="action_8">
+  <action name="action_run">
    <property name="text">
     <string>运行</string>
    </property>
   </action>
-  <action name="action_9">
+  <action name="action_result">
    <property name="text">
     <string>查看结果</string>
    </property>
   </action>
-  <action name="action_10">
+  <action name="action_compare">
    <property name="text">
     <string>分析对比</string>
+   </property>
+  </action>
+  <action name="action_save">
+   <property name="text">
+    <string>保存</string>
    </property>
   </action>
  </widget>
