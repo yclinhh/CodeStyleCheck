@@ -4,20 +4,19 @@
 # @Author : yachao_lin
 # @File : main_window_show.py
 
-import fileinput
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-# from GUI.main_window import Ui_MainWindow
+from CodeStyleCheck.GUI.text_editor import QCodeEditor
 from CodeStyleCheck.GUI.main_window import Ui_MainWindow
-from CodeStyleCheck.GUI.QCodeEditor import QCodeEditor
+# from CodeStyleCheck.lianxi.QCodeEditor1 import QCodeEditor
 
 
 class QMyWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(QMyWindow, self).__init__()
         self.setupUi(self)
-        self.ff = QCodeEditor()
-        self.horizontalLayout.addWidget(self.ff)
+        self.myTextEditor = QCodeEditor()
+        self.horizontalLayout.addWidget(self.myTextEditor)
         self.initUI()
 
     # 后台逻辑处理
@@ -52,15 +51,10 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             f = open(file_path[0], encoding='utf-8', mode='r+')
             with f:
                 data = f.read()
-                '''
-                self.plainTextEdit.appendPlainText(data)
-                
-                '''
-                self.ff.appendPlainText(data)
-                print(data)
-
-    # 打开文件
-    def open_file(self):
+                # self.plainTextEdit.appendPlainText(data)
+                self.myTextEditor.appendPlainText(data)
+    # 保存文件
+    def save_file_action(self):
         file_name = QFileDialog.getOpenFileName()
 
     # 重写关闭事件，当函数调用它没有用

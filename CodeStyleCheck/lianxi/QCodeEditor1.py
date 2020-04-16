@@ -2,14 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Time : 2020/4/15 0:22
 # @Author : yachao_lin
-# @File : QCodeEditor.py
-
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-# @Time : 2020/4/14 23:39
-# @Author : yachao_lin
-# @File : qcodeeditor.py
-
+# @File : QCodeEditor1.py
 # coding = utf-8
 
 from PyQt5.QtCore import Qt, QRect

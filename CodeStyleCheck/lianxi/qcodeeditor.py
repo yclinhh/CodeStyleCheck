@@ -13,16 +13,16 @@ import sys
 
 
 class QCodeEditor(QPlainTextEdit):
-    '''class NumberBar(QWidget):
+    class NumberBar(QWidget):
 
         def __init__(self, editor):
             #QWidget.__init__(self, editor)
             super().__init__(editor)
             self.editor = editor
-            self.editor.blockCountChanged.connect(self.updateWidth)
+            #self.editor.blockCountChanged.connect(self.updateWidth)
             self.editor.updateRequest.connect(self.updateContents)
             self.font = QFont()
-            self.numberBarColor = QColor("#e8e8e8")
+            self.numberBarColor = QColor("#F5F5F5")
 
         def paintEvent(self, event):
 
@@ -59,6 +59,7 @@ class QCodeEditor(QPlainTextEdit):
             width = self.getWidth()
             self.editor.setViewportMargins(width, 0, 0, 0)
 
+
         def updateContents(self, rect, dy):
             if dy:
                 self.scroll(0, dy)
@@ -70,15 +71,17 @@ class QCodeEditor(QPlainTextEdit):
                 self.font.setPointSize(fontSize)
                 self.font.setStyle(QFont.StyleNormal)
                 self.updateWidth()
-'''
+
+    self.number_bar = self.NumberBar(self)
     def __init__(self):
 
         super(QCodeEditor, self).__init__()
         self.setWindowTitle('微信公众号：学点编程吧--带行号和颜色的文本框')
-
+        # 设置当前字体和大小
         self.setFont(QFont("Ubuntu Mono", 12))
+
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
-        #self.number_bar = self.NumberBar(self)
+
         self.currentLineNumber = None
         self.cursorPositionChanged.connect(self.highligtCurrentLine)
         self.setViewportMargins(40, 0, 0, 0)
@@ -86,8 +89,8 @@ class QCodeEditor(QPlainTextEdit):
 
     def resizeEvent(self, *e):
         cr = self.contentsRect()
-       # rec = QRect(cr.left(), cr.top(), self.number_bar.getWidth(), cr.height())
-       # self.number_bar.setGeometry(rec)
+        rec = QRect(cr.left(), cr.top(), self.number_bar.getWidth(), cr.height())
+        self.number_bar.setGeometry(rec)
 
         QPlainTextEdit.resizeEvent(self, *e)
 
