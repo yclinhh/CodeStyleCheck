@@ -3,6 +3,8 @@
 # @Time : 2020/4/12 22:04
 # @Author : yachao_lin
 # @File : main_window_show.py
+import sys
+
 import pymysql
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
@@ -52,13 +54,13 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             glo_file_path = file_path[0]
             print("保存文件路径：", glo_file_path)
             self.textBrowser.setPlainText(str(file_path[0]))
-
-            # 读写方式打开文件
-            f = open(file_path[0], encoding='utf-8', mode='r+')
-            with f:
-                data = f.read()
-                # self.plainTextEdit.appendPlainText(data)
-                self.myTextEditor.appendPlainText(data)
+            try:
+                # 读写方式打开文件
+                with open(file_path[0], encoding='utf-8', mode='r+') as f:
+                    data = f.read()
+                    self.myTextEditor.appendPlainText(data)
+            except IOError as e:
+                print(e)
 
     # 保存文件
     def save_file_action(self):
@@ -73,6 +75,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             print(e)
             print("exception:glo_file_path")
 
+    # 清屏
     def close_file_action(self):
         self.myTextEditor.selectAll()
         self.myTextEditor.clear()
@@ -92,7 +95,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         sapp = QApplication.instance()
         sapp.exit()
 
-    # 清屏
+    # 代码检查
     def code_check_action(self):
         db = pymysql.connect("localhost", "root", "123456", "cstyle_db" )
         cursor = db.cursor()
@@ -104,12 +107,20 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             with open(glo_file_path, mode='r', encoding='utf8') as f:
                 for line in f:
                     line = f.readline()
-                    self.lexical_analyzer(line)
+                    result = self.lexical_analyzer(line)
+                    self.check(result)
 
         except IOError as e:
             print(e)
 
     @staticmethod
     def lexical_analyzer(line):
-        print(line, end='')
+        string = line
 
+        return []
+
+    @staticmethod
+    def check(line):
+        print(line, end='')
+        print(1)
+        # sys.exit()
