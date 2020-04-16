@@ -102,7 +102,7 @@ class QCodeEditor(QPlainTextEdit):
             hi_selection.cursor.clearSelection()
             self.setExtraSelections([hi_selection])
 
-'''
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     editor = QCodeEditor()
@@ -110,4 +110,3 @@ if __name__ == '__main__':
     editor.show()
 
     sys.exit(app.exec_())
-'''

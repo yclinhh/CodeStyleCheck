@@ -12,6 +12,8 @@ import sys
 global sec, num
 sec = 0
 num = 0
+
+
 class QCodeEditor(QPlainTextEdit):
 
     class NumberBar(QWidget):
@@ -20,7 +22,6 @@ class QCodeEditor(QPlainTextEdit):
             super().__init__(editor)
             # 传递一个参数
             self.editor = editor
-            self.editor.setViewportMargins(20, 0, 0, 0)
             # 信号触发条件：更新字符块，并且会传递当前行数
             #self.editor.blockCountChanged.connect(self.updateWidth)
             # 区域更新
@@ -47,9 +48,8 @@ class QCodeEditor(QPlainTextEdit):
                 global num
                 num += 1
                 blockNumber = block.blockNumber()
-                print("blockNum{0}:".format(num), blockNumber)
-                print("secondNum{0}:".format(num), self.editor.textCursor().blockNumber())
                 block_top = self.editor.blockBoundingGeometry(block).translated(self.editor.contentOffset()).top()
+
                 if blockNumber == self.editor.textCursor().blockNumber():
                     self.font.setBold(True)
                     painter.setPen(QColor("#000000"))
@@ -70,19 +70,17 @@ class QCodeEditor(QPlainTextEdit):
         def updateContents(self, rect, dy):
             global sec
             sec += 1
-            print(sec, rect, dy)
+            # print(sec, rect, dy)
             if dy:
                 self.scroll(0, dy)
             else:
                 self.update(0, rect.y(), self.width(), self.height())
 
-            '''
             # 我们返回编辑器输入框中插入新文本时使用的字体的磅值。并将其设置为NumberBar这个小部件的字体样式。
             if rect.contains(self.editor.viewport().rect()):
                 fontSize = self.editor.currentCharFormat().font().pointSize()
                 self.font.setPointSize(fontSize)
                 self.font.setStyle(QFont.StyleNormal)
-            '''
 
     def __init__(self):
         super(QCodeEditor, self).__init__()
@@ -97,16 +95,18 @@ class QCodeEditor(QPlainTextEdit):
         self.number_bar = self.NumberBar(self)
         # 光标位置改变信号与槽函数连接，设置当前光标所在行为高亮显示
         self.cursorPositionChanged.connect(self.highlightCurrentLine)
-        # 设置当前视口边缘，左边固定留下20的距离用来显示行号
-        self.setViewportMargins(20, 0, 0, 0)
+        # 设置当前视口边缘
+        self.setViewportMargins(40, 0, 0, 0)
         # 调用高亮函数让第一行初始化为高亮
-        self.highlightCurrentLine()
+        # self.highlightCurrentLine()
 
+    # 重写resizeEvent事件，为窗口小部件设置形状
     def resizeEvent(self, *e):
         cr = self.contentsRect()
-        rec = QRect(cr.left(), cr.top(), 20, cr.height())
+        rec = QRect(cr.left(), cr.top(), 40, cr.height())
         self.number_bar.setGeometry(rec)
-        #QPlainTextEdit.resizeEvent(self, *e)
+        QPlainTextEdit.resizeEvent(self, *e)
+
     def highlightCurrentLine(self):
         extraSelections=[]
         # 获取当前光标所在块的编号（块以回车划分）无效返回0
@@ -118,7 +118,7 @@ class QCodeEditor(QPlainTextEdit):
             lineColor = QColor(Qt.green).lighter(160)
             # QTextEdit.ExtraSelection结构提供了一种为文档中已选择指定字符格式的方法
             selection = QTextEdit.ExtraSelection()
-            print("{1}:{0}".format(selection, newCurrentLineNumber))
+            # print("{1}:{0}".format(selection, newCurrentLineNumber))
             # 指定选区的背景
             selection.format.setBackground(lineColor)
             # 设置文本的整个宽度为选中状态
@@ -129,8 +129,6 @@ class QCodeEditor(QPlainTextEdit):
             extraSelections.append(selection)
             # 允许用指定的颜色临时标记文档中的某些区域，并将其指定为选项,括号中为列表形式
             self.setExtraSelections(extraSelections)
-
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

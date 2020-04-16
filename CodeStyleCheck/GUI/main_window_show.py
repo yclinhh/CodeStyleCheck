@@ -3,12 +3,14 @@
 # @Time : 2020/4/12 22:04
 # @Author : yachao_lin
 # @File : main_window_show.py
-
+import pymysql
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from CodeStyleCheck.GUI.text_editor import QCodeEditor
 from CodeStyleCheck.GUI.main_window import Ui_MainWindow
 # from CodeStyleCheck.lianxi.QCodeEditor1 import QCodeEditor
+# 全局变量存储：文件路径
+glo_file_path = ""
 
 
 class QMyWindow(QMainWindow, Ui_MainWindow):
@@ -21,10 +23,12 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
 
     # 后台逻辑处理
     def initUI(self):
-        # 打开文件信号与槽关联
+        # 关联信号与槽函数
         self.action_open.triggered.connect(self.open_file_action)
-        # 主窗口退出信号与槽关联
+        self.action_save.triggered.connect(self.save_file_action)
+        self.action_close.triggered.connect(self.close_file_action)
         self.action_quit.triggered.connect(self.mainWindow_quit)
+        self.action_run.triggered.connect(self.code_check_action)
 
     # 代码文件加载线程
     def open_file_action_thread(self):
@@ -41,23 +45,41 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         dialog.setFilter(QDir.Files)
         # 打开对话框
         if dialog.exec():
-            print('OK')
             # 接受选中文件的路径，路径默认保存在列表
             file_path = dialog.selectedFiles()
             # 显示文件路径
+            global glo_file_path
+            glo_file_path = file_path[0]
+            print("保存文件路径：", glo_file_path)
             self.textBrowser.setPlainText(str(file_path[0]))
-            print(str(file_path[0]))
+
             # 读写方式打开文件
             f = open(file_path[0], encoding='utf-8', mode='r+')
             with f:
                 data = f.read()
                 # self.plainTextEdit.appendPlainText(data)
                 self.myTextEditor.appendPlainText(data)
+
     # 保存文件
     def save_file_action(self):
-        file_name = QFileDialog.getOpenFileName()
+        global glo_file_path
+        # if glo_file_path is not None:
+        print("打印文件路径：", glo_file_path)
+        try:
+            with open(glo_file_path, mode='r+', encoding='utf8') as f:
+                f.write(self.myTextEditor.toPlainText())
+                print("保存成功！")
+        except IOError as e:
+            print(e)
+            print("exception:glo_file_path")
 
-    # 重写关闭事件，当函数调用它没有用
+    def close_file_action(self):
+        self.myTextEditor.selectAll()
+        self.myTextEditor.clear()
+        self.textBrowser.selectAll()
+        self.textBrowser.clear()
+
+    # 重写关闭事件（用函数调用它没有用）
     def closeEvent(self, event):
         reply = QMessageBox.question(self, '提示', '你确定要关闭吗？',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -67,6 +89,27 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             event.ignore()
 
     def mainWindow_quit(self):
-        qapp = QApplication.instance()
-        qapp.exit()
-        # 用信号与槽机制  每次点击一个按钮就发射一个信号
+        sapp = QApplication.instance()
+        sapp.exit()
+
+    # 清屏
+    def code_check_action(self):
+        db = pymysql.connect("localhost", "root", "123456", "cstyle_db" )
+        cursor = db.cursor()
+        cursor.execute("select VERSION()")
+        data = cursor.fetchall()
+        print(data)
+        try:
+            global glo_file_path
+            with open(glo_file_path, mode='r', encoding='utf8') as f:
+                for line in f:
+                    line = f.readline()
+                    self.lexical_analyzer(line)
+
+        except IOError as e:
+            print(e)
+
+    @staticmethod
+    def lexical_analyzer(line):
+        print(line, end='')
+

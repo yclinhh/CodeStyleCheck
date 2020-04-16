@@ -72,14 +72,13 @@ class QCodeEditor(QPlainTextEdit):
                 self.font.setStyle(QFont.StyleNormal)
                 self.updateWidth()
 
-    self.number_bar = self.NumberBar(self)
     def __init__(self):
 
         super(QCodeEditor, self).__init__()
         self.setWindowTitle('微信公众号：学点编程吧--带行号和颜色的文本框')
         # 设置当前字体和大小
         self.setFont(QFont("Ubuntu Mono", 12))
-
+        self.number_bar = self.NumberBar(self)
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
 
         self.currentLineNumber = None
