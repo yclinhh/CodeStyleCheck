@@ -11,8 +11,8 @@ from PyQt5.QtWidgets import *
 from CodeStyleCheck.GUI.text_editor import QCodeEditor
 from CodeStyleCheck.GUI.main_window import Ui_MainWindow
 # from CodeStyleCheck.lianxi.QCodeEditor1 import QCodeEditor
-# 全局变量存储：文件路径
-glo_file_path = ""
+
+glo_file_path = "" # 全局变量存储：文件路径
 
 
 class QMyWindow(QMainWindow, Ui_MainWindow):
@@ -106,7 +106,6 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             global glo_file_path
             with open(glo_file_path, mode='r', encoding='utf8') as f:
                 for line in f:
-                    line = f.readline()
                     result = self.lexical_analyzer(line)
                     self.check(result)
 
