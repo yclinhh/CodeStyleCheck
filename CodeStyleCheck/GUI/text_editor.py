@@ -92,9 +92,9 @@ class QCodeEditor(QPlainTextEdit):
 
     # 重写resizeEvent事件，为窗口小部件设置形状
     def resizeEvent(self, *e):
-        cr = self.contentsRect()
-        rec = QRect(cr.left(), cr.top(), 40, cr.height())
-        self.number_bar.setGeometry(rec)
+        cr = self.contentsRect()  # 获取文本内容的左上角坐标，宽度，高度
+        rec = QRect(cr.left(), cr.top(), 40, cr.height())  # 参数为左上角坐标和宽高
+        self.number_bar.setGeometry(rec)    # 设置小部件的形状
         QPlainTextEdit.resizeEvent(self, *e)
 
     def highlightCurrentLine(self):
