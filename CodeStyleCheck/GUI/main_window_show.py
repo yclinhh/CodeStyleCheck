@@ -32,7 +32,7 @@ class Login(QDialog, Ui_Dialog):
     def initUI(self):
         self.pushButton.clicked.connect(self.emit_signal)
         self.pushButton_2.clicked.connect(self.close)
-        
+
     # 发射自定义信号槽函数，传递参数给主窗口函数
     def emit_signal(self):
         StuID = self.lineEdit.text()  # 获得文本内容
