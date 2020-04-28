@@ -4,15 +4,16 @@
 # @Author : yachao_lin
 # @File : main_window_show.py
 import sys
-
 import pymysql
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from CodeStyleCheck.GUI.text_editor import QCodeEditor
 from CodeStyleCheck.GUI.main_window import Ui_MainWindow
+from CodeStyleCheck.lianxi.test_regxExpre import *
 # from CodeStyleCheck.lianxi.QCodeEditor1 import QCodeEditor
 
-glo_file_path = "" # 全局变量存储：文件路径
+glo_file_path = ""  # 全局变量存储：文件路径
+record_tab = []     # 全局记录表：存储所有行的单词种别码
 
 
 class QMyWindow(QMainWindow, Ui_MainWindow):
@@ -31,6 +32,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         self.action_close.triggered.connect(self.close_file_action)
         self.action_quit.triggered.connect(self.mainWindow_quit)
         self.action_run.triggered.connect(self.code_check_action)
+        self.action_run.triggered.connect(self.analyze_result)
 
     # 代码文件加载线程
     def open_file_action_thread(self):
@@ -51,7 +53,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             file_path = dialog.selectedFiles()
             # 显示文件路径
             global glo_file_path
-            glo_file_path = file_path[0]
+            glo_file_path = file_path[0]         # 获取文件路径
             print("保存文件路径：", glo_file_path)
             self.textBrowser.setPlainText(str(file_path[0]))
             try:
@@ -81,6 +83,8 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         self.myTextEditor.clear()
         self.textBrowser.selectAll()
         self.textBrowser.clear()
+        self.textBrowser_2.selectAll()
+        self.textBrowser_2.clear()
 
     # 重写关闭事件（用函数调用它没有用）
     def closeEvent(self, event):
@@ -91,35 +95,150 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         else:
             event.ignore()
 
+    # 退出
     def mainWindow_quit(self):
         sapp = QApplication.instance()
         sapp.exit()
 
     # 代码检查
     def code_check_action(self):
-        db = pymysql.connect("localhost", "root", "123456", "cstyle_db" )
+        """
+        分析打开文件的代码
+        :return:
+        """
+        global glo_file_path, record_tab
+        try:
+            with open(glo_file_path, mode='r', encoding='utf8') as f:
+                text0 = f.read()
+                record_tab = Scanner(text0)
+                print(record_tab)
+                self.mysql_operate()
+                # for line in f:
+                #     result = self.lexical_analyzer(line)
+                #     self.check(result)
+        except IOError as e:
+            print(e)
+
+    #        插入时没有检查是否重复
+    @staticmethod
+    def mysql_operate():
+        """
+        逐个分析单词，将分析结果保存在error数据表里
+        :return:
+        """
+        global glo_file_path, record_tab
+        db = pymysql.connect("localhost", "root", "123456", "cstyle_db")
         cursor = db.cursor()
         cursor.execute("select VERSION()")
         data = cursor.fetchall()
         print(data)
         try:
-            global glo_file_path
+            list_path = glo_file_path.split('/')
+            file_name = list_path[-1]            # 获取文件名
+            print("list_path", list_path)
+            print("textName:", file_name)
+            len_record_tab = len(record_tab)   # 列表长度
+            print("length:", len_record_tab)
+            i = 0
             with open(glo_file_path, mode='r', encoding='utf8') as f:
-                for line in f:
-                    result = self.lexical_analyzer(line)
-                    self.check(result)
-
-        except IOError as e:
-            print(e)
-
-    @staticmethod
-    def lexical_analyzer(line):
-        string = line
-
-        return []
-
+                for line_str in f:
+                    print("第{0}行代码{1}".format(i, line_str))
+                    if not record_tab[i]:  # 元素为空，行号加1
+                        i += 1
+                    else:
+                        tab = record_tab[i]
+                        i_length = len(tab)   # 第i行单词表长度
+                        for j in range(i_length):
+                            var = tab[j]
+                            # try:
+                            select_sql = "select ruleid, express, ruletypeid from rule where WordID = %s" % var
+                            cursor.execute(select_sql)
+                            db.commit()
+                            print("查询成功")
+                            reg_tup = cursor.fetchall()   # 获取所有符合的正则表达式，返回一个元组
+                            if reg_tup:
+                                reg_str = str(list(reg_tup[0])[1])  # 元组转换为字符串
+                                _ruleid = list(reg_tup[0])[0]  # 获取ruleid
+                                _ruletypeid =list(reg_tup[0])[2]  # 获取ruletypeid
+                                # reg_str = ''.join(reg_tup[0])   # 元组转换为字符串
+                                print("reg_str:", reg_str, type(reg_str))
+                                pattern = re.compile(reg_str)  # 编译正则表达式
+                                print("line----->:", type(line_str), line_str)
+                                mark = pattern.match(line_str)      # 匹配结果
+                                if not mark:        # 如果不匹配mark = None
+                                    sql_err = "select * from error where Name = '%s'and  RuleID = '%d' and RuleTypeID" \
+                                              "= '%d'and Line = '%d'and WrongCode = '%s'"\
+                                              % (file_name, _ruleid, _ruletypeid, int(i)+1, str(line_str))
+                                    response = cursor.execute(sql_err)
+                                    db.commit()
+                                    print("response:", response)
+                                    if response == 1:
+                                        print("数据已存在！")
+                                    else:
+                                        try:
+                                            insert_sql = "insert into error (Name, RuleID, RuleTypeID, Line, " \
+                                                         "WrongCode) values('%s', '%d', '%d', '%d', '%s')" % \
+                                                     (file_name, _ruleid, _ruletypeid, int(i)+1, str(line_str))
+                                            cursor.execute(insert_sql)
+                                            db.commit()
+                                            print("插入成功")
+                                        except Exception as e:
+                                            print(e)
+                                            print("插入错误")
+                                            db.rollback()
+                            else:
+                                pass
+                            # except Exception as e:
+                            #     print(e)
+                            #     print("查询出错")
+                            #     db.rollback()
+                            # finally:
+                            #     cursor.close()
+                            #     db.close()
+                        i += 1
+        except IOError as e1:
+            print("文件打开问题")
+            print(e1)
+        finally:
+            cursor.close()
+            db.close()
     @staticmethod
     def check(line):
         print(line, end='')
         print(1)
         # sys.exit()
+
+    def analyze_result(self):
+        """
+        查询程序分析的结果，从error数据表中查询错误信息
+        :return:
+        """
+        global glo_file_path
+        db = pymysql.connect("localhost", "root", "123456", "cstyle_db")
+        cursor = db.cursor()
+        list_path = glo_file_path.split('/')
+        file_name = list_path[-1]  # 获取文件名
+        print("list_path", list_path)
+        print("textName:", file_name)
+        sql = "select  error.Name, rule.Name,rule.Advice, ruletype.Name, line, wrongcode, corrected" \
+              " from error left join rule on error.RuleID = rule.RuleID left join ruletype on " \
+              "error.RuleTypeID = ruletype.RuleTypeID order by error.Line "
+        try:
+            cursor.execute(sql)
+            data = cursor.fetchall()
+            print("analyze_result函数查询成功！")
+            print(data)
+            length = len(data)
+            for i in range(length):
+                txt = (list(data[i]))
+                print(txt)
+                # for j in range(len(txt)):
+                txt_str = '序号：'+str(i)+'  当前文件名称：'+str(txt[0])+'  错误行号：第 '+str(txt[4])+' 行'+\
+                          '  错误代码：'+str(txt[5])+'错误原因：'+str(txt[1])+'  错误类型：'+str(txt[3])+'  建议：'+str(txt[2])+'\n '
+                self.textBrowser_2.append(txt_str)
+        except Exception as e:
+            print(e)
+            print("查询失败：analyze_result函数")
+        finally:
+            cursor.close()
+            db.close()

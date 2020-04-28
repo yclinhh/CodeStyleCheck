@@ -59,7 +59,7 @@ class Ui_MainWindow(object):
         self.textBrowser_2 = QtWidgets.QTextBrowser(self.tab_2)
         font = QtGui.QFont()
         font.setFamily("黑体")
-        font.setPointSize(14)
+        font.setPointSize(10)
         self.textBrowser_2.setFont(font)
         self.textBrowser_2.setObjectName("textBrowser_2")
         self.horizontalLayout_2.addWidget(self.textBrowser_2)

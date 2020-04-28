@@ -70,7 +70,8 @@ def Scanner(para):
     pos = 0  # 坐标
     # a = word.get('/')
     # print("a--->:", a)
-    # _keyWord.append(a)
+
+    # _keyWord.append(a)a/x
     # _keyWord.append(a)
     # print(_keyWord)
     while pos < length:
@@ -206,6 +207,8 @@ def Scanner(para):
         #     # pass 如果以上情况都没有， 跳过，暂时不分
     print("扫描完毕")
     print(_recordTab)
+    leng = len(_recordTab)
+    print("leng:", leng)
     sec = 0
     for i in li:
         print(i, end='')
@@ -213,6 +216,7 @@ def Scanner(para):
         if sec == 15:
             sec = 0
             print('\n')
+    return _recordTab
 
 
 if __name__ == '__main__':

@@ -73,7 +73,7 @@ class QCodeEditor(QPlainTextEdit):
     def __init__(self):
 
         super(QCodeEditor, self).__init__()
-        self.setWindowTitle('微信公众号：学点编程吧--带行号和颜色的文本框')
+        self.setWindowTitle('带行号和颜色的文本框')
 
         self.setFont(QFont("Ubuntu Mono", 12))
         self.setLineWrapMode(QPlainTextEdit.NoWrap)
