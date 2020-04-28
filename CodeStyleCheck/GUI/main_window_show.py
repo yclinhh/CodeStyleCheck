@@ -3,17 +3,45 @@
 # @Time : 2020/4/12 22:04
 # @Author : yachao_lin
 # @File : main_window_show.py
-import sys
-import pymysql
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+
+from CodeStyleCheck.GUI.InputStuID import Ui_Dialog
 from CodeStyleCheck.GUI.text_editor import QCodeEditor
 from CodeStyleCheck.GUI.main_window import Ui_MainWindow
-from CodeStyleCheck.lianxi.test_regxExpre import *
+from CodeStyleCheck.model.test_regxExpre import *
+from CodeStyleCheck.model.mydb import MysqlOperation
+
 # from CodeStyleCheck.lianxi.QCodeEditor1 import QCodeEditor
 
 glo_file_path = ""  # 全局变量存储：文件路径
-record_tab = []     # 全局记录表：存储所有行的单词种别码
+record_tab = []  # 全局记录表：存储所有行的单词种别码
+studentID = ''
+
+
+class Login(QDialog, Ui_Dialog):
+    closeSignal = pyqtSignal(str)  # 自定义信号，传递一个字符串参数
+
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
+        # 设置为模态对话框/只有当前对话框可用
+        self.setWindowModality(Qt.ApplicationModal)
+        self.initUI()
+
+    def initUI(self):
+        self.pushButton.clicked.connect(self.emit_signal)
+        self.pushButton_2.clicked.connect(self.close)
+        
+    # 发射自定义信号槽函数，传递参数给主窗口函数
+    def emit_signal(self):
+        StuID = self.lineEdit.text()  # 获得文本内容
+        if len(StuID) == 0:
+            QMessageBox.warning(self, "提示", "输入不能为空!!!")
+        else:
+            self.closeSignal.emit(StuID)
+            print("ok:----->", StuID)
+            self.close()
 
 
 class QMyWindow(QMainWindow, Ui_MainWindow):
@@ -22,6 +50,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.myTextEditor = QCodeEditor()
         self.horizontalLayout.addWidget(self.myTextEditor)
+        self.mysqlConnOperation = MysqlOperation("localhost", "root", "123456", "cstyle_db")
         self.initUI()
 
     # 后台逻辑处理
@@ -33,6 +62,23 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         self.action_quit.triggered.connect(self.mainWindow_quit)
         self.action_run.triggered.connect(self.code_check_action)
         self.action_run.triggered.connect(self.analyze_result)
+
+    # # 输入学号
+    # def inputInfo(self):
+    #     self.dialog = Login()
+    #     '''连接子窗口的自定义信号与主窗口的槽函数'''
+    #     self.dialog.signalInfo.connect(self.deal_emit_slot)
+    #     self.dialog.show()
+    #     print("12")
+
+    # jies
+    def deal_emit_slot(self, StuID):
+        self.show()
+        global studentID
+        studentID = ''
+        studentID += StuID
+        print("studentID:", studentID)
+
 
     # 代码文件加载线程
     def open_file_action_thread(self):
@@ -53,7 +99,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             file_path = dialog.selectedFiles()
             # 显示文件路径
             global glo_file_path
-            glo_file_path = file_path[0]         # 获取文件路径
+            glo_file_path = file_path[0]  # 获取文件路径
             print("保存文件路径：", glo_file_path)
             self.textBrowser.setPlainText(str(file_path[0]))
             try:
@@ -61,8 +107,17 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                 with open(file_path[0], encoding='utf-8', mode='r+') as f:
                     data = f.read()
                     self.myTextEditor.appendPlainText(data)
+                    self.mysqlConnOperation.connect()
+                    # sql = "select * from code where FilePath = %s" % glo_file_path
+                    # res = None
+                    # res = self.mysqlConnOperation.select_one(sql)
+                    # if res:
+                    #     pass
+                    # else:
+                    #     sql
             except IOError as e:
                 print(e)
+                print("打开文件失败!")
 
     # 保存文件
     def save_file_action(self):
@@ -134,10 +189,10 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         print(data)
         try:
             list_path = glo_file_path.split('/')
-            file_name = list_path[-1]            # 获取文件名
+            file_name = list_path[-1]  # 获取文件名
             print("list_path", list_path)
             print("textName:", file_name)
-            len_record_tab = len(record_tab)   # 列表长度
+            len_record_tab = len(record_tab)  # 列表长度
             print("length:", len_record_tab)
             i = 0
             with open(glo_file_path, mode='r', encoding='utf8') as f:
@@ -147,7 +202,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                         i += 1
                     else:
                         tab = record_tab[i]
-                        i_length = len(tab)   # 第i行单词表长度
+                        i_length = len(tab)  # 第i行单词表长度
                         for j in range(i_length):
                             var = tab[j]
                             # try:
@@ -155,20 +210,20 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                             cursor.execute(select_sql)
                             db.commit()
                             print("查询成功")
-                            reg_tup = cursor.fetchall()   # 获取所有符合的正则表达式，返回一个元组
+                            reg_tup = cursor.fetchall()  # 获取所有符合的正则表达式，返回一个元组
                             if reg_tup:
                                 reg_str = str(list(reg_tup[0])[1])  # 元组转换为字符串
                                 _ruleid = list(reg_tup[0])[0]  # 获取ruleid
-                                _ruletypeid =list(reg_tup[0])[2]  # 获取ruletypeid
+                                _ruletypeid = list(reg_tup[0])[2]  # 获取ruletypeid
                                 # reg_str = ''.join(reg_tup[0])   # 元组转换为字符串
                                 print("reg_str:", reg_str, type(reg_str))
                                 pattern = re.compile(reg_str)  # 编译正则表达式
                                 print("line----->:", type(line_str), line_str)
-                                mark = pattern.match(line_str)      # 匹配结果
-                                if not mark:        # 如果不匹配mark = None
+                                mark = pattern.match(line_str)  # 匹配结果
+                                if not mark:  # 如果不匹配mark = None
                                     sql_err = "select * from error where Name = '%s'and  RuleID = '%d' and RuleTypeID" \
-                                              "= '%d'and Line = '%d'and WrongCode = '%s'"\
-                                              % (file_name, _ruleid, _ruletypeid, int(i)+1, str(line_str))
+                                              "= '%d'and Line = '%d'and WrongCode = '%s'" \
+                                              % (file_name, _ruleid, _ruletypeid, int(i) + 1, str(line_str))
                                     response = cursor.execute(sql_err)
                                     db.commit()
                                     print("response:", response)
@@ -178,7 +233,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                         try:
                                             insert_sql = "insert into error (Name, RuleID, RuleTypeID, Line, " \
                                                          "WrongCode) values('%s', '%d', '%d', '%d', '%s')" % \
-                                                     (file_name, _ruleid, _ruletypeid, int(i)+1, str(line_str))
+                                                         (file_name, _ruleid, _ruletypeid, int(i) + 1, str(line_str))
                                             cursor.execute(insert_sql)
                                             db.commit()
                                             print("插入成功")
@@ -202,6 +257,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         finally:
             cursor.close()
             db.close()
+
     @staticmethod
     def check(line):
         print(line, end='')
@@ -233,8 +289,9 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                 txt = (list(data[i]))
                 print(txt)
                 # for j in range(len(txt)):
-                txt_str = '序号：'+str(i)+'  当前文件名称：'+str(txt[0])+'  错误行号：第 '+str(txt[4])+' 行'+\
-                          '  错误代码：'+str(txt[5])+'错误原因：'+str(txt[1])+'  错误类型：'+str(txt[3])+'  建议：'+str(txt[2])+'\n '
+                txt_str = '序号：' + str(i) + '  当前文件名称：' + str(txt[0]) + '  错误行号：第 ' + str(txt[4]) + ' 行' + \
+                          '  错误代码：' + str(txt[5]) + '错误原因：' + str(txt[1]) + '  错误类型：' + str(txt[3]) + '  建议：' + str(
+                    txt[2]) + '\n '
                 self.textBrowser_2.append(txt_str)
         except Exception as e:
             print(e)
