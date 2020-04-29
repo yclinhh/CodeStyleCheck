@@ -1,13 +1,7 @@
-#include <iostream>
-#include<cstdlib>
+
 #include<string>
 #include<cstring>
 using namespace std;
-
-/*vmdknbdlb*/
-/*dvddddddddddddddddddddddddddddd*/
-
-
 
 
 typedef struct list{                        ///
@@ -45,30 +39,33 @@ Node*creat()
     delete p;
     return head;
 }
-int*same(Node*head1,Node*head2,int*aa)
+
+int main()
 {
-    Node*p,*q;
-    p=head1->next;
-    q=head2->next;
-    int i=0;
-    while(p)
-    {
-        while(q)
-        {
-            if(q->data==p->data)
-            {
-                aa[i++]=q->data;
-            }
-			q=q->next;
-        }
-		p=p->next;
-		q=head2->next;
-    }
-    return aa;
+    Node*head1,*head2;
+    head1=creat();
+   head2=creat();
+   cout<<"list a:";
+   show(head1);
+   cout<<endl<<"list b:";
+   show(head2);
+  int *aa;
+    aa=(int*)malloc(100*sizeof(int));
+    aa=same(head1,head2,aa);
+    head1=shanchu(head1,aa);
+    head2=shanchu(head2,aa);
+    cout<<endl<<"result a:";
+     show(head1);
+     cout<<endl<<"result b:";
+     show(head2);
+
+    return 0;
 }
-Node *shanchu(Node*head,int *aa)
-{
-    Node*p=head->next,*q=head;
+    show(head2);
+
+    return 0;
+}
+t,*q=head;
 
     int i=0,flag=0;
     while(p)
@@ -120,6 +117,10 @@ int main()
      show(head1);
      cout<<endl<<"result b:";
      show(head2);
+
+    return 0;
+}
+    show(head2);
 
     return 0;
 }

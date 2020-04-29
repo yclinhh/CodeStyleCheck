@@ -1,5 +1,13 @@
-#include<stdio.h>
-int main(){
-   int i,j;
-   i = 0;
-   j=0;}
+
+# include <stdio.h>
+ /*因为要用到求平方函数sqrt()，所以要包含头文件 math.h*/
+int main(void)
+{
+    //把三个系数保存到计算机中
+    int a = 1;  // “=”不表示相等，而是表示赋值
+    double x1, x2;  //分别用于存放一元二次方程的两个解
+    delta = b*b - 4*a*c;
+    if (delta > 0)
+     
+    return 0;
+}
