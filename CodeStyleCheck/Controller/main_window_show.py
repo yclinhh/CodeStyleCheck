@@ -3,6 +3,7 @@
 # @Time : 2020/4/12 22:04
 # @Author : yachao_lin
 # @File : main_window_show.py
+import fileinput
 import re
 import time
 
@@ -26,8 +27,8 @@ studentID = 1
 class Login(QDialog, Ui_Dialog):
     closeSignal = pyqtSignal(str)  # 自定义信号，传递一个字符串参数
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.setupUi(self)
         # 设置为模态对话框/只有当前对话框可用
         self.setWindowModality(Qt.ApplicationModal)
@@ -90,49 +91,52 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
 
     # 打开代码文件
     def open_file_action(self):
-        print("ok")
         # 建立一个文件对话框
         dialog = QFileDialog()
-        # 设置文件模式（这里操作对象为任何文件）
-        dialog.setFileMode(QFileDialog.AnyFile)
-        # 设置过滤器（这里显示所有文件列表）
-        dialog.setFilter(QDir.Files)
+        dialog.setFileMode(QFileDialog.AnyFile)  # 设置文件模式（这里操作对象为任何文件）
+        dialog.setFilter(QDir.Files)  # 设置过滤器（这里显示所有文件列表）
         # 打开对话框
         if dialog.exec():
-            # 接受选中文件的路径，路径默认保存在列表
-            file_path = dialog.selectedFiles()
+            file_path = dialog.selectedFiles()  # 接受选中文件的路径，路径默认保存在列表
             print("file_path: ", file_path)
-            # 显示文件路径
             global glo_file_path
             glo_file_path = file_path[0]  # 获取文件路径
             print("保存文件路径：", glo_file_path)
-            self.textBrowser.setPlainText(str(file_path[0]))
+            self.textBrowser.setPlainText(glo_file_path)    # 显示文件路径
+            text_content = ''
             try:
                 # 读写方式打开文件
-                with open(file_path[0], encoding='utf-8', mode='r+') as f:
-                    data = f.read()  # 获取文件内容
-                    self.myTextEditor.appendPlainText(data)
-                    list_path = glo_file_path.split('/')
-                    file_name = list_path[-1]  # 获取文件名
-                    print("open_file_action_______list_path", list_path)
-                    print("open_file_action_______textName:", file_name)
-                    sql1 = "select * from code where FilePath = '%s' and StudentID = 1 " % str(file_path[0])
-                    print(sql1)
-                    res = None
-                    res = self.mysqlConnOperation.select_one(sql1)
-                    if res:  # 如果数据库中有该代码文件信息，不处理
-                        print("该文件信息已经存储过!")
-                    else:  # 没有代码文件信息，保存至数据库
-                        # datetime = QDateTime.currentDateTime()  # 获取当前时间精确到秒
-                        # strTime = datetime.toString()  # 转化为字符串
-                        sql2 = "insert into code (FileName, FileContent, FilePath, StudentID)VALUES('%s', '%s', '%s', %s)" % (
-                                  file_name, data, glo_file_path, studentID)
-                        rowNum = None
-                        rowNum = self.mysqlConnOperation.insert(sql2)
-                        print("受影响行号rowNum：", rowNum)
+                print("try open file")
+                with open(glo_file_path, mode='r+', encoding='UTF-8') as f:
+                    print("open ")
+                    for line in f:
+                        text_content += line  # 获取文件内容
+                        self.myTextEditor.appendPlainText(line.rstrip('\n'))
             except IOError as e:
                 print(e)
                 print("打开文件失败!")
+            # self.myTextEditor.appendPlainText(data)
+            list_path = glo_file_path.split('/')
+            file_name = list_path[-1]  # 获取文件名
+            print("open_file_action_______list_path", list_path)
+            print("open_file_action_______textName:", file_name)
+            sql1 = "select * from code where FilePath = '%s' and StudentID = 1 ", glo_file_path
+            print(sql1)
+            res = None
+            res = self.mysqlConnOperation.select_one(sql1)
+            if res:  # 如果数据库中有该代码文件信息，不处理
+                print("该文件信息已经存储过!")
+            else:  # 没有代码文件信息，保存至数据库
+                datetime = QDateTime.currentDateTime()  # 获取当前时间精确到秒
+                strTime = datetime.toString()  # 转化为字符串
+                sql2 = "insert into code (FileName, FileContent, SaveDate,ModifyDate , FilePath, StudentID)VALUES('%s','%s','%s','%s','%s','%s')" % (file_name, text_content, strTime, strTime, glo_file_path, str(studentID))
+                rowNum = None
+                rowNum = self.mysqlConnOperation.insert(sql2)
+                print("受影响行号rowNum：", rowNum)
+
+    # 文件另存为
+    def save_other_file_action(self):
+        pass
 
     # 保存文件
     def save_file_action(self):
@@ -140,7 +144,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         # if glo_file_path is not None:
         print("保存文件路径：", glo_file_path)
         try:
-            with open(glo_file_path, mode='w', encoding='utf8') as f:
+            with open(glo_file_path, mode='w') as f:
                 cont = self.myTextEditor.toPlainText()
                 f.write(cont)  # 重新对该文件写入
                 datetime = QDateTime.currentDateTime()
@@ -162,6 +166,8 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         self.textBrowser.clear()
         self.textBrowser_2.selectAll()
         self.textBrowser_2.clear()
+        global glo_file_path
+        glo_file_path = ''
 
     # 重写关闭事件（用函数调用它没有用）
     def closeEvent(self, event):
@@ -186,10 +192,10 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         """
         global glo_file_path, record_tab
         try:
-            with open(glo_file_path, mode='r', encoding='utf8') as f:
+            with open(glo_file_path, mode='r', encoding='UTF-8') as f:
                 text0 = f.read()
                 record_tab = Scanner(text0)
-                print(record_tab)
+                print("record_tab:", record_tab)
                 self.mysql_operate()
         except IOError as e:
             print(e)
@@ -200,6 +206,8 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         Error表中的corrected属性值有两种：是，否；代表该条错误是否已经更改，在设置一个类属性ErrorID_record[]为列表，每次打开文件时
         在打开文件函数中初始化这个列表，每次运行"完毕",--运行完---，之后获取所有ErrorID，将ErrorID与ErrorID_record比较，如果不在
         ErrorID_record 中的编号ErrorID中没有，则将corrected改为是，否则pass
+
+        空行:设置一个标志，遇到一个空行激活标志，连续遇到就用正则表达式匹配
         :return:
         """
         global glo_file_path, record_tab
@@ -216,18 +224,20 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             len_record_tab = len(record_tab)  # 列表长度
             print("length:", len_record_tab)
             i = 0
-            with open(glo_file_path, mode='r', encoding='utf8') as f:
+            with open(glo_file_path, mode='r', encoding='UTF-8') as f:
                 for line_str in f:
                     print("第{0}行代码{1}".format(i, line_str))
                     if not record_tab[i]:  # 元素为空，行号加1
                         i += 1
+                        if i >= len_record_tab:
+                            break
                     else:
                         tab = record_tab[i]
                         i_length = len(tab)  # 第i行单词表长度
                         for j in range(i_length):
                             var = tab[j]
                             # try:
-                            select_sql = "select RuleID, Express, RuleTypeID from rule where WordID = %s" % var
+                            select_sql = "select RuleID, Express, RuleTypeID from rule where WordID = '%s'" % str(var)
                             # cursor.execute(select_sql)
                             # db.commit()
                             # print("查询成功")
@@ -244,7 +254,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                 mark = pattern.match(line_str)  # 匹配
                                 print("mark:", mark)
                                 if not mark:  # 如果不匹配mark = None,这行代码形式不规范
-                                    sql_err = "select * from error where Name = '%s'and  RuleID = '%d' and RuleTypeID" \
+                                    sql_err = "select * from error where Name = '%s',  RuleID = '%d' and RuleTypeID" \
                                               "= '%d'and Line = '%d'and WrongCode = '%s'" \
                                               % (file_name, _ruleid, _ruletypeid, int(i) + 1, str(line_str))
                                     # response = cursor.execute(sql_err)
@@ -262,7 +272,8 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                         print("文件ID查询成功!", file_id)
                                         insert_sql = "insert into error (Name, RuleID, RuleTypeID, Line, " \
                                                      "WrongCode,FileID) values('%s', '%s', '%s', '%s', '%s','%s')" % \
-                                                     (file_name, _ruleid, _ruletypeid, int(i) + 1, str(line_str), file_id[0])
+                                                     (file_name, _ruleid, _ruletypeid, str(int(i) + 1), str(line_str),
+                                                      file_id[0])
                                         # cursor.execute(insert_sql)
                                         # db.commit()
                                         self.mysqlConnOperation.insert(insert_sql)
@@ -281,6 +292,8 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                             #     cursor.close()
                             #     db.close()
                         i += 1
+                        if i >= len_record_tab:
+                            break
         except IOError as e1:
             print("文件打开问题", e1)
 

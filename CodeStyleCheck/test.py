@@ -3,6 +3,8 @@
 # @Time : 2020/4/18 18:35
 # @Author : yachao_lin
 # @File : test.py
+import fileinput
+
 import pymysql
 from PyQt5.QtCore import QDateTime
 
@@ -32,25 +34,6 @@ def sca():
 
 if __name__ == '__main__':
 
-    # d = []
-    # v = []
-    # v.append(d)
-    # d.clear()
-    # d = copy.deepcopy(d)
-    # d.append(1)
-    # print(v)
-    # d.clear()
-    # d = copy.deepcopy(d)
-    # d.append(1)
-    # d.append(2)
-    # d.append(3)
-    # v.append(d)
-    # print(v)
-    # d = copy.deepcopy(d)
-    # d.clear()
-    # d.append(12)
-    # v.append(d)
-    # print(v)
     # jieshou = []
     # path = 'E:\毕业设计\学生代码规范化检测\CodeStyleCheck\cesi.txt'
     # try:
@@ -88,37 +71,37 @@ if __name__ == '__main__':
     # print(i)
 
     # # print(type(tab[2]))
-    db = pymysql.connect("localhost", "root", "123456", "cstyle_db")
-    cursor = db.cursor()
-    idd = '5'
-    try:
-        # sql = "select ruleid, name, express, advice, standard, ruletypeid from rule where WordID = %s" % idd
-        # sql_err = "select * from error where Name = '%s'and  RuleID = '%d' and RuleTypeID" \
-        #           "= '%d'and Line = '%d'and WrongCode = '%s'" \
-        #           % (file_name, _ruleid, _ruletypeid, int(i) + 1, str(line_str))
-        datetime = QDateTime.currentDateTime()  # 获取当前时间精确到秒
-        strTime = datetime.toString()  # 转化为字符串
-        file_name = 'ceshi2.txt'
-        data = 'dvjisdjvnjksnvksnvksn' \
-               'dnvlksdnvksnvksd' \
-               'dvvsdmvlsdvsdv' \
-               'dvmdkvmdslv' \
-               'sdvdvs'
-        glo_file_path = 'E:/毕业设计/学生代码规范化检测/CodeStyleCheck/ceshi2.txt'
-        studentID = '1'
-        sql = "insert into code (FileName, FileContent, SaveDate, ModifyDate, FilePath, StudentID)VALUES('%s', '%s', '%s', '%s', '%s', '%s')" % (
-            file_name, data, strTime, strTime, glo_file_path, studentID)
-        print(sql)
-        cursor.execute(sql)
-        db.commit()
-        # ss = cursor.fetchall()
-        # print(ss)
-        # ss = str((list(ss[0]))[0])
-        # print(ss)
-        # print(type(ss))
-    except Exception as e:
-        print("Failed")
-        print(e)
+    # db = pymysql.connect("localhost", "root", "123456", "cstyle_db")
+    # cursor = db.cursor()
+    # idd = '5'
+    # try:
+    #     # sql = "select ruleid, name, express, advice, standard, ruletypeid from rule where WordID = %s" % idd
+    #     # sql_err = "select * from error where Name = '%s'and  RuleID = '%d' and RuleTypeID" \
+    #     #           "= '%d'and Line = '%d'and WrongCode = '%s'" \
+    #     #           % (file_name, _ruleid, _ruletypeid, int(i) + 1, str(line_str))
+    #     datetime = QDateTime.currentDateTime()  # 获取当前时间精确到秒
+    #     strTime = datetime.toString()  # 转化为字符串
+    #     file_name = 'ceshi2.txt'
+    #     data = 'dvjisdjvnjksnvksnvksn' \
+    #            'dnvlksdnvksnvksd' \
+    #            'dvvsdmvlsdvsdv' \
+    #            'dvmdkvmdslv' \
+    #            'sdvdvs'
+    #     glo_file_path = 'E:/毕业设计/学生代码规范化检测/CodeStyleCheck/ceshi2.txt'
+    #     studentID = '1'
+    #     sql = "insert into code (FileName, FileContent, SaveDate, ModifyDate, FilePath, StudentID)VALUES('%s', '%s', '%s', '%s', '%s', '%s')" % (
+    #         file_name, data, strTime, strTime, glo_file_path, studentID)
+    #     print(sql)
+    #     cursor.execute(sql)
+    #     db.commit()
+    #     # ss = cursor.fetchall()
+    #     # print(ss)
+    #     # ss = str((list(ss[0]))[0])
+    #     # print(ss)
+    #     # print(type(ss))
+    # except Exception as e:
+    #     print("Failed")
+    #     print(e)
     # s =(('^[\\\\s\\\\S]+[^ ]{1},[ ][^ ]+.*$',), (123))
     # db.close()
     # print("s:", s, type(s))
@@ -126,3 +109,10 @@ if __name__ == '__main__':
     # a = (23,)
     # print(a[0])
     # print(type(a[0]))
+    glo_file_path ='E:/林.指针/数据结构/账簿管理系统/1.txt'
+    i = 0
+    with open(glo_file_path, mode='r') as f:
+        for line_str in f:
+            i += 1
+            print("第{0}行代码{1}".format(i, line_str.strip('\n')))
+

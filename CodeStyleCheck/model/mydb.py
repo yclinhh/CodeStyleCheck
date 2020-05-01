@@ -41,7 +41,7 @@ class MysqlOperation:
             res = self.cursor.fetchone()
             self.close()
             print("查询一条数据成功!")
-            print("res", res)
+            # print("res", res)
         except Exception as e:
             print(e)
             print("查询一条数据失败!")
