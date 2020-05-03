@@ -1,0 +1,12 @@
+# include<stdio.h>
+/*bbdvjdvj*/
+int i=0;
+void sdc(int *p)
+{
+   return 0;
+}
+int main()
+{
+    return 0;
+}
+

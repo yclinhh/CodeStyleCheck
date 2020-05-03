@@ -23,8 +23,8 @@ import pymysql
 #       (83, '）（界符）'), (84, ']（界符）'), (85, '}（界符）'))
 
 word = {'char': 1, 'double': 2, 'enum': 3, 'float': 4, 'int': 5,
-        'long': 6, 'short': 7,'signed': 8, 'union': 9, 'unsigned': 10,
-        'struct': 11, 'void': 12, 'auto': 13,'typedef': 14, 'const': 15,
+        'long': 6, 'short': 7, 'signed': 8, 'union': 9, 'unsigned': 10,
+        'struct': 11, 'void': 12, 'auto': 13, 'typedef': 14, 'const': 15,
         'extern': 16, 'register': 17, 'static': 18, 'volatile': 19, 'if': 20,
         'else': 21, 'switch': 22, 'for': 23, 'do': 24, 'while': 25, 'goto': 26,
         'continue': 27, 'break': 28, 'return': 29, 'default': 30, 'sizeof': 31,

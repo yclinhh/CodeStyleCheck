@@ -6,11 +6,13 @@
 import fileinput
 import re
 import time
+from typing import List, Any
 
 import pymysql
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
+from CodeStyleCheck.Controller.myEditRule_ui import MyEditRule
 from CodeStyleCheck.GUI.InputStuID import Ui_Dialog
 from CodeStyleCheck.GUI.text_editor import QCodeEditor
 from CodeStyleCheck.GUI.main_window import Ui_MainWindow
@@ -20,8 +22,14 @@ from CodeStyleCheck.model.mydb import MysqlOperation
 # from CodeStyleCheck.lianxi.QCodeEditor1 import QCodeEditor
 
 glo_file_path = ""  # 全局变量存储：文件路径
-record_tab = []  # 全局记录表：存储所有行的单词种别码
+record_tab: List[Any] = []  # 全局记录表：存储所有行的单词种别码
+ErrorID_record = []  # 错误记录表，记录本次运行检查获取的所有错误ID
 studentID = 1
+# commmet_word = 'char': 1, 'double': 2, 'enum': 3, 'float': 4, 'int': 5,
+#         'long': 6, 'short': 7, 'signed': 8, 'union': 9, 'unsigned': 10,
+#         'struct': 11, 'void':12, '标识符': 79, '(': 73
+'''注释检测关键字种别码表'''
+comment_word = [1, 2, 3, 4, 5, 12]  # 79, 73  '标识符': 79, '(': 73
 
 
 class Login(QDialog, Ui_Dialog):
@@ -52,6 +60,7 @@ class Login(QDialog, Ui_Dialog):
 class QMyWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(QMyWindow, self).__init__()
+        self.ui1 = MyEditRule()    # 配置规则界面
         self.setupUi(self)
         self.myTextEditor = QCodeEditor()
         self.horizontalLayout.addWidget(self.myTextEditor)
@@ -67,6 +76,10 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         self.action_quit.triggered.connect(self.mainWindow_quit)
         self.action_run.triggered.connect(self.code_check_action)
         self.action_run.triggered.connect(self.analyze_result)
+        self.action_edit.triggered.connect(self.jump_to_1)
+
+    def jump_to_1(self):
+        self.ui1.show()
 
     # # 输入学号
     # def inputInfo(self):
@@ -91,6 +104,8 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
 
     # 打开代码文件
     def open_file_action(self):
+        global ErrorID_record
+        ErrorID_record = []  # 初始化错误记录表
         # 建立一个文件对话框
         dialog = QFileDialog()
         dialog.setFileMode(QFileDialog.AnyFile)  # 设置文件模式（这里操作对象为任何文件）
@@ -102,25 +117,24 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             global glo_file_path
             glo_file_path = file_path[0]  # 获取文件路径
             print("保存文件路径：", glo_file_path)
-            self.textBrowser.setPlainText(glo_file_path)    # 显示文件路径
+            self.textBrowser.setPlainText(glo_file_path)  # 显示文件路径
             text_content = ''
             try:
                 # 读写方式打开文件
-                print("try open file")
-                with open(glo_file_path, mode='r+', encoding='UTF-8') as f:
-                    print("open ")
+                with open(glo_file_path, mode='r', encoding='UTF-8') as f:
                     for line in f:
                         text_content += line  # 获取文件内容
+                        print(line.rstrip('\n'))
                         self.myTextEditor.appendPlainText(line.rstrip('\n'))
             except IOError as e:
                 print(e)
                 print("打开文件失败!")
-            # self.myTextEditor.appendPlainText(data)
+            # self.myTextEditor.appendPlainText(text_content)
             list_path = glo_file_path.split('/')
             file_name = list_path[-1]  # 获取文件名
             print("open_file_action_______list_path", list_path)
             print("open_file_action_______textName:", file_name)
-            sql1 = "select * from code where FilePath = '%s' and StudentID = 1 ", glo_file_path
+            sql1 = "select * from code where FilePath = '%s' and StudentID = 1 " % glo_file_path
             print(sql1)
             res = None
             res = self.mysqlConnOperation.select_one(sql1)
@@ -129,7 +143,15 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             else:  # 没有代码文件信息，保存至数据库
                 datetime = QDateTime.currentDateTime()  # 获取当前时间精确到秒
                 strTime = datetime.toString()  # 转化为字符串
-                sql2 = "insert into code (FileName, FileContent, SaveDate,ModifyDate , FilePath, StudentID)VALUES('%s','%s','%s','%s','%s','%s')" % (file_name, text_content, strTime, strTime, glo_file_path, str(studentID))
+                sql2 = "insert into `code` " \
+                       "(`FileName`,`FileContent`,`SaveDate`,`ModifyDate`,`FilePath`,`StudentID`)" \
+                       "VALUES('%s','%s','%s','%s','%s','%s')" % \
+                       (pymysql.escape_string(file_name),
+                        pymysql.escape_string(text_content),
+                        pymysql.escape_string(strTime),
+                        pymysql.escape_string(strTime),
+                        pymysql.escape_string(glo_file_path),
+                        pymysql.escape_string(str(studentID)))
                 rowNum = None
                 rowNum = self.mysqlConnOperation.insert(sql2)
                 print("受影响行号rowNum：", rowNum)
@@ -166,12 +188,13 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         self.textBrowser.clear()
         self.textBrowser_2.selectAll()
         self.textBrowser_2.clear()
-        global glo_file_path
+        global glo_file_path, record_tab
         glo_file_path = ''
+        record_tab = []
 
     # 重写关闭事件（用函数调用它没有用）
-    def closeEvent(self, event):
-        reply = QMessageBox.question(self, '提示', '你确定要关闭吗？',
+    def closeEvent(self, event, parent=None):
+        reply = QMessageBox.question(parent, '提示', '你确定要关闭吗？',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             event.accept()
@@ -197,6 +220,8 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                 record_tab = Scanner(text0)
                 print("record_tab:", record_tab)
                 self.mysql_operate()
+                # self.analyze_comment(text0)
+
         except IOError as e:
             print(e)
 
@@ -237,7 +262,9 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                         for j in range(i_length):
                             var = tab[j]
                             # try:
-                            select_sql = "select RuleID, Express, RuleTypeID from rule where WordID = '%s'" % str(var)
+                            select_sql = "select " \
+                                         "RuleID, Express, RuleTypeID from rule " \
+                                         "where WordID = '%s'" % str(var)
                             # cursor.execute(select_sql)
                             # db.commit()
                             # print("查询成功")
@@ -309,7 +336,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         file_name = list_path[-1]  # 获取文件名
         print("list_path", list_path)
         print("textName:", file_name)
-        sql = "select  error.Name, rule.Name,rule.Advice, ruletype.Name, line, WrongCode, corrected" \
+        sql = "select  error.Name, rule.Name,rule.Advice, ruletype.Name, error.Line, error.WrongCode, error.Corrected" \
               " from error left join rule on error.RuleID = rule.RuleID left join ruletype on " \
               "error.RuleTypeID = ruletype.RuleTypeID left join code c on error.FileID = c.CodeID" \
               " where c.FilePath = '%s' and c.StudentID = '1' order by error.Line " % glo_file_path
@@ -318,7 +345,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             # data = cursor.fetchall()
             data = self.mysqlConnOperation.select_all(sql)
             print("代码分析结果查询成功！")
-            print(data)
+            # print(data)
             length = len(data)
             for i in range(length):
                 txt = (list(data[i]))
@@ -334,12 +361,23 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             print(e)
             print("查询失败：analyze_result函数")
 
-    # 分析注释
-    @staticmethod
-    def analyze_comment(para):
+    # 分析注释  初始化也可以加上
+    def analyze_comment(self, para):
         text = para
+        global record_tab
+        length = len(record_tab)
+        print("analyze_comment--->length", length)
+        print(record_tab)
+        for i in range(length):
+            tab = record_tab[i]
+            for j in range(len(tab)):
+                if tab[j] in comment_word and 79 == tab[j + 1] and 73 == tab[j + 2]:
+                    print("行号：", i + 1)
+                    print("hang:", tab)
+                    break
+                else:
+                    j += 1
 
     # 分析缩进与对齐
-    @staticmethod
-    def analyze_align(para):
+    def analyze_align(self, para):
         text = para

@@ -50,17 +50,19 @@ class MysqlOperation:
     # 查询多条数据
     def select_all(self, sql):
         res = None
+        descr = None
         try:
             self.connect()
             self.cursor.execute(sql)
             res = self.cursor.fetchall()
+            descr = self.cursor.description
             self.close()
             print("查询所有数据成功!")
         except Exception as e:
             print(e)
             print("查询所有数据失败!")
         finally:
-            return res
+            return res, descr
 
     # 插入数据
     def insert(self, sql):
