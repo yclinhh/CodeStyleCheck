@@ -4,6 +4,7 @@
 # @Author : yachao_lin
 # @File : test.py
 import fileinput
+import re
 
 import pymysql
 from PyQt5.QtCore import QDateTime
@@ -35,7 +36,7 @@ def sca():
 if __name__ == '__main__':
 
     # jieshou = []
-    # path = 'E:\毕业设计\学生代码规范化检测\CodeStyleCheck\cesi.txt'
+    # path = 'E:\毕业设计\学生代码规范化检测\CodeStyleCheck\cesi.cpp'
     # try:
     #     with open(path, encoding='utf8', model='r+') as f:
     #         text = f.read()
@@ -44,18 +45,28 @@ if __name__ == '__main__':
     #         print("---------------------------------------------------------------\n", jieshou)
     # except IOError as e:
     #     print(e)for
-    # reg = '^[\\s\\S]+[^ ]{1},[ ][^ ]+.*$$'
-    # pattern = re.compile(reg)
-    # string = ' int a , b,b,c'
-    # f = pattern.match(string)
-    # g = re.match(r'^12$', string)
-    # print(f)
-    # print(g)
-    # if not f:
-    #     print("f:ok!")
-    # if g:
-    #     print("g:ok!")
-    # path = 'E:\毕业设计\学生代码规范化检测\CodeStyleCheck\cesi.txt'
+    # reg = '^.*(?<!([ ]\\+[ ])).*(([\\S]\\+)|([ ]*\\+[\\S])|([ ]*\\+[ ])*).*$'
+    reg = '^[^\\n]*(return)[^\\n]*\\([^\\n]*\\)[^\\n]*$'
+    pattern = re.compile(reg)
+    string = '        return( - 1);'
+    f = pattern.match(string)
+    h = pattern.finditer(string)
+    g = re.match(r'^12$', string)
+    print('f:', f)
+    print('g:', g)
+    print(h)
+    for match in h:
+        print(match.group())
+    if not f:
+        print("f:ok!")
+    if g:
+        print("g:ok!")
+    res = 1
+    if not res:
+        print(2)
+    else:
+        print(1)
+    # path = 'E:\毕业设计\学生代码规范化检测\CodeStyleCheck\cesi.cpp'
     # p = path.split('\\')
     # print(type(p))
     # print(p)
@@ -71,37 +82,39 @@ if __name__ == '__main__':
     # print(i)
 
     # # print(type(tab[2]))
-    # db = pymysql.connect("localhost", "root", "123456", "cstyle_db")
-    # cursor = db.cursor()
-    # idd = '5'
-    # try:
-    #     # sql = "select ruleid, name, express, advice, standard, ruletypeid from rule where WordID = %s" % idd
-    #     # sql_err = "select * from error where Name = '%s'and  RuleID = '%d' and RuleTypeID" \
-    #     #           "= '%d'and Line = '%d'and WrongCode = '%s'" \
-    #     #           % (file_name, _ruleid, _ruletypeid, int(i) + 1, str(line_str))
-    #     datetime = QDateTime.currentDateTime()  # 获取当前时间精确到秒
-    #     strTime = datetime.toString()  # 转化为字符串
-    #     file_name = 'ceshi2.txt'
-    #     data = 'dvjisdjvnjksnvksnvksn' \
-    #            'dnvlksdnvksnvksd' \
-    #            'dvvsdmvlsdvsdv' \
-    #            'dvmdkvmdslv' \
-    #            'sdvdvs'
-    #     glo_file_path = 'E:/毕业设计/学生代码规范化检测/CodeStyleCheck/ceshi2.txt'
-    #     studentID = '1'
-    #     sql = "insert into code (FileName, FileContent, SaveDate, ModifyDate, FilePath, StudentID)VALUES('%s', '%s', '%s', '%s', '%s', '%s')" % (
-    #         file_name, data, strTime, strTime, glo_file_path, studentID)
-    #     print(sql)
-    #     cursor.execute(sql)
-    #     db.commit()
-    #     # ss = cursor.fetchall()
-    #     # print(ss)
-    #     # ss = str((list(ss[0]))[0])
-    #     # print(ss)
-    #     # print(type(ss))
-    # except Exception as e:
-    #     print("Failed")
-    #     print(e)
+    db = pymysql.connect("localhost", "root", "123456", "cstyle_db")
+    cursor = db.cursor()
+    idd = '5'
+    try:
+        # sql = "select ruleid, name, express, advice, standard, ruletypeid from rule where WordID = %s" % idd
+        # sql_err = "select * from error where Name = '%s'and  RuleID = '%d' and RuleTypeID" \
+        #           "= '%d'and Line = '%d'and WrongCode = '%s'" \
+        #           % (file_name, _ruleid, _ruletypeid, int(i) + 1, str(line_str))
+        datetime = QDateTime.currentDateTime()  # 获取当前时间精确到秒
+        strTime = datetime.toString()  # 转化为字符串
+        file_name = 'ceshi2.txt'
+        data = 'dvjisdjvnjksnvksnvksn' \
+               'dnvlksdnvksnvksd' \
+               'dvvsdmvlsdvsdv' \
+               'dvmdkvmdslv' \
+               'sdvdvs'
+        glo_file_path = 'E:/林.指针/程序设计基础/函数计分作业/面积/面积/1.cpp'
+        studentID = '1'
+        # sql = "insert into code (FileName, FileContent, SaveDate, ModifyDate, FilePath, StudentID)VALUES('%s', '%s', '%s', '%s', '%s', '%s')" % (
+        #     file_name, data, strTime, strTime, glo_file_path, studentID)
+        a = 1826
+        sql = "update error set error.Corrected = '否'where ErrorID = '%s'" % 1826
+        print(sql)
+        cursor.execute(sql)
+        db.commit()
+        # ss = cursor.fetchall()
+        # print(ss)
+        # ss = str((list(ss[0]))[0])
+        # print(ss)
+        # print(type(ss))
+    except Exception as e:
+        print("Failed")
+        print(e)
     # s =(('^[\\\\s\\\\S]+[^ ]{1},[ ][^ ]+.*$',), (123))
     # db.close()
     # print("s:", s, type(s))
@@ -109,10 +122,9 @@ if __name__ == '__main__':
     # a = (23,)
     # print(a[0])
     # print(type(a[0]))
-    glo_file_path ='E:/林.指针/数据结构/账簿管理系统/1.txt'
-    i = 0
-    with open(glo_file_path, mode='r') as f:
-        for line_str in f:
-            i += 1
-            print("第{0}行代码{1}".format(i, line_str.strip('\n')))
-
+    # glo_file_path ='E:/林.指针/数据结构/账簿管理系统/1.txt'
+    # i = 0
+    # with open(glo_file_path, mode='r') as f:
+    #     for line_str in f:
+    #         i += 1
+    #         print("第{0}行代码{1}".format(i, line_str.strip('\n')))

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Time : 2020/4/13 0:55
 # @Author : yachao_lin
-# @File : main.py.py
+# @File : main.py
 
 import sys
 from PyQt5.QtWidgets import QApplication
@@ -14,6 +14,8 @@ if __name__ == '__main__':
     # ui.show()
     # ui = Login()
     # uiMyWin = QMyWindow()
+    # 连接信号与槽函数
+    ui.showResultSignal.connect(ui.ui2.deal_showResult_emit_slot)
     ui.show()
     '''连接子窗口的自定义信号与主窗口的槽函数'''
     # ui.closeSignal.connect(uiMyWin.deal_emit_slot)

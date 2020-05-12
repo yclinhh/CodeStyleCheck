@@ -13,6 +13,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 
 from CodeStyleCheck.Controller.myEditRule_ui import MyEditRule
+from CodeStyleCheck.Controller.show_result import MyResult
 from CodeStyleCheck.GUI.InputStuID import Ui_Dialog
 from CodeStyleCheck.GUI.text_editor import QCodeEditor
 from CodeStyleCheck.GUI.main_window import Ui_MainWindow
@@ -24,7 +25,9 @@ from CodeStyleCheck.model.mydb import MysqlOperation
 glo_file_path = ""  # 全局变量存储：文件路径
 record_tab: List[Any] = []  # 全局记录表：存储所有行的单词种别码
 ErrorID_record = []  # 错误记录表，记录本次运行检查获取的所有错误ID
-studentID = 1
+student_id = 1
+current_file_id = -1  # 当前文件id
+data_lst = []  # 打开文件时，获取当前文件错误信息，id 保存在此列表中
 # commmet_word = 'char': 1, 'double': 2, 'enum': 3, 'float': 4, 'int': 5,
 #         'long': 6, 'short': 7, 'signed': 8, 'union': 9, 'unsigned': 10,
 #         'struct': 11, 'void':12, '标识符': 79, '(': 73
@@ -58,9 +61,11 @@ class Login(QDialog, Ui_Dialog):
 
 
 class QMyWindow(QMainWindow, Ui_MainWindow):
+    showResultSignal = pyqtSignal(int, int)  # 自定义信号，传递路径、学号给showResult窗口
+
     def __init__(self):
         super(QMyWindow, self).__init__()
-        self.ui1 = MyEditRule()    # 配置规则界面
+        self.ui2 = MyResult()  # 错误显示界面
         self.setupUi(self)
         self.myTextEditor = QCodeEditor()
         self.horizontalLayout.addWidget(self.myTextEditor)
@@ -77,14 +82,20 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         self.action_run.triggered.connect(self.code_check_action)
         self.action_run.triggered.connect(self.analyze_result)
         self.action_edit.triggered.connect(self.jump_to_1)
+        self.action_result.triggered.connect(self.jump_to_2)
 
     def jump_to_1(self):
+        self.ui1 = MyEditRule()  # 配置规则界面
         self.ui1.show()
 
+    def jump_to_2(self):
+        global glo_file_path, student_id
+        self.showResult_emit_signal()
+        self.ui2.show()
     # # 输入学号
     # def inputInfo(self):
     #     self.dialog = Login()
-    #     '''连接子窗口的自定义信号与主窗口的槽函数'''
+    #     '''连接信号与槽函数，连接子窗口的自定义信号与主窗口的槽函数'''
     #     self.dialog.signalInfo.connect(self.deal_emit_slot)
     #     self.dialog.show()
     #     print("12")
@@ -92,11 +103,17 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
     # 获得学号，打开主界面
     def deal_emit_slot(self, StuID):
         time.sleep(0.5)
-        global studentID
-        studentID = ''
-        studentID += StuID
+        global student_id
+        student_id = ''
+        student_id += StuID
         self.show()
-        print("studentID:", studentID)
+        print("studentID:", student_id)
+
+    # 结果显示界面，发射信号函数   # 发射自定义信号槽函数，传递参数给结果显示窗口函数
+    def showResult_emit_signal(self):
+        global current_file_id, student_id
+        self.showResultSignal.emit(current_file_id, student_id)
+        print("成功发射current_file_id, student_id:----->", current_file_id, student_id)
 
     # 代码文件加载线程
     def open_file_action_thread(self):
@@ -104,8 +121,8 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
 
     # 打开代码文件
     def open_file_action(self):
-        global ErrorID_record
-        ErrorID_record = []  # 初始化错误记录表
+        # global ErrorID_record
+        # ErrorID_record = []  # 初始化错误记录表,记录本次运行检查获取的所有错误ID
         # 建立一个文件对话框
         dialog = QFileDialog()
         dialog.setFileMode(QFileDialog.AnyFile)  # 设置文件模式（这里操作对象为任何文件）
@@ -121,10 +138,10 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             text_content = ''
             try:
                 # 读写方式打开文件
-                with open(glo_file_path, mode='r', encoding='UTF-8') as f:
+                with open(glo_file_path, mode='r', encoding='utf-8') as f:
                     for line in f:
                         text_content += line  # 获取文件内容
-                        print(line.rstrip('\n'))
+                        # print(line.rstrip('\n'))
                         self.myTextEditor.appendPlainText(line.rstrip('\n'))
             except IOError as e:
                 print(e)
@@ -134,7 +151,9 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             file_name = list_path[-1]  # 获取文件名
             print("open_file_action_______list_path", list_path)
             print("open_file_action_______textName:", file_name)
-            sql1 = "select * from code where FilePath = '%s' and StudentID = 1 " % glo_file_path
+            global student_id
+            sql1 = "select * from code where FilePath = '%s' and StudentID = '%s' " % (
+                pymysql.escape_string(glo_file_path), student_id)
             print(sql1)
             res = None
             res = self.mysqlConnOperation.select_one(sql1)
@@ -151,10 +170,18 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                         pymysql.escape_string(strTime),
                         pymysql.escape_string(strTime),
                         pymysql.escape_string(glo_file_path),
-                        pymysql.escape_string(str(studentID)))
+                        pymysql.escape_string(str(student_id)))
                 rowNum = None
                 rowNum = self.mysqlConnOperation.insert(sql2)
                 print("受影响行号rowNum：", rowNum)
+            sql_findCodeId = "select CodeID from code where FilePath = '%s' and StudentID = '%s'" % \
+                             (pymysql.escape_string(glo_file_path), pymysql.escape_string(str(student_id)))
+            res1 = None
+            res1 = self.mysqlConnOperation.select_one(sql_findCodeId)
+            print('res1:', res1)
+            global current_file_id
+            current_file_id = res1[0]
+            print(current_file_id, type(current_file_id))
 
     # 文件另存为
     def save_other_file_action(self):
@@ -162,19 +189,21 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
 
     # 保存文件
     def save_file_action(self):
-        global glo_file_path
+        global glo_file_path, student_id, current_file_id
         # if glo_file_path is not None:
         print("保存文件路径：", glo_file_path)
         try:
-            with open(glo_file_path, mode='w') as f:
+            with open(glo_file_path, mode='w', encoding='utf-8') as f:
                 cont = self.myTextEditor.toPlainText()
                 f.write(cont)  # 重新对该文件写入
                 datetime = QDateTime.currentDateTime()
                 datetime = datetime.toString()
                 print("保存文件->时间：", datetime)
-                '''sql语句书写不标准，修改多个属性的值，用逗号隔开，不用and'''
-                sql = "update code set FileContent = '%s', ModifyDate = '%s' where FilePath = '%s'" % \
-                      (cont, datetime, glo_file_path)
+                '''sql语句书写不标准，修改多个属性的值，用逗号隔开，不用and(不用and好像不对)'''
+                sql = "update code set FileContent = '%s', ModifyDate = '%s' where CodeID = '%s'" % \
+                      (pymysql.escape_string(cont),
+                       pymysql.escape_string(datetime),
+                       current_file_id)
                 self.mysqlConnOperation.update(sql)
                 print("保存成功！")
         except IOError as e:
@@ -213,9 +242,19 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         分析文件中的代码
         :return:
         """
+        '''打开文件时就获取所有错误信息'''
+        global current_file_id
+        # 查找所有错误条目
+        sql_findAllError = "select * from error where FileID = '%s'" % current_file_id
+        error_all, descr = self.mysqlConnOperation.select_all(sql_findAllError)
+        global data_lst
+        data_lst = [error_all[i][0] for i in range(len(error_all))]
+        print('data', error_all)
+        print('list-->', data_lst)
+        print('record-->', ErrorID_record)
         global glo_file_path, record_tab
         try:
-            with open(glo_file_path, mode='r', encoding='UTF-8') as f:
+            with open(glo_file_path, mode='r') as f:
                 text0 = f.read()
                 record_tab = Scanner(text0)
                 print("record_tab:", record_tab)
@@ -235,12 +274,13 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         空行:设置一个标志，遇到一个空行激活标志，连续遇到就用正则表达式匹配
         :return:
         """
-        global glo_file_path, record_tab
+        global glo_file_path, record_tab, student_id, current_file_id, ErrorID_record
         # db = pymysql.connect("localhost", "root", "123456", "cstyle_db")
         # cursor = db.cursor()
         # cursor.execute("select VERSION()")
         # data = cursor.fetchall()
         # print(data)
+
         try:
             list_path = glo_file_path.split('/')
             file_name = list_path[-1]  # 获取文件名
@@ -249,7 +289,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             len_record_tab = len(record_tab)  # 列表长度
             print("length:", len_record_tab)
             i = 0
-            with open(glo_file_path, mode='r', encoding='UTF-8') as f:
+            with open(glo_file_path, mode='r') as f:
                 for line_str in f:
                     print("第{0}行代码{1}".format(i, line_str))
                     if not record_tab[i]:  # 元素为空，行号加1
@@ -264,12 +304,13 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                             # try:
                             select_sql = "select " \
                                          "RuleID, Express, RuleTypeID from rule " \
-                                         "where WordID = '%s'" % str(var)
+                                         "where WordID = '%s'" % pymysql.escape_string(str(var))
                             # cursor.execute(select_sql)
                             # db.commit()
                             # print("查询成功")
                             # reg_tup = cursor.fetchall()  # 获取所有符合的正则表达式，返回一个元组
-                            reg_tup = self.mysqlConnOperation.select_all(select_sql)  # 获取所有符合的正则表达式，返回一个元组
+                            reg_tup, descr = self.mysqlConnOperation.select_all(select_sql)  # 获取所有符合的正则表达式，返回一个元组
+                            print('reg_tup:', reg_tup)
                             if reg_tup:
                                 reg_str = str(list(reg_tup[0])[1])  # 元组转换为字符串
                                 _ruleid = list(reg_tup[0])[0]  # 获取ruleid
@@ -280,26 +321,38 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                 print("line----->:", type(line_str), line_str)
                                 mark = pattern.match(line_str)  # 匹配
                                 print("mark:", mark)
-                                if not mark:  # 如果不匹配mark = None,这行代码形式不规范
-                                    sql_err = "select * from error where Name = '%s',  RuleID = '%d' and RuleTypeID" \
-                                              "= '%d'and Line = '%d'and WrongCode = '%s'" \
-                                              % (file_name, _ruleid, _ruletypeid, int(i) + 1, str(line_str))
+                                if not mark:  # 如果不匹配mark = None,这行代码形式不规范   # WrongCode = '%s'and
+                                    sql_err = "select * from error where Name = '%s'and RuleID = '%d' and RuleTypeID" \
+                                              "= '%d'and Line = '%d'and FileID = '%s'" \
+                                              % (pymysql.escape_string(file_name),
+                                                 _ruleid,
+                                                 _ruletypeid,
+                                                 int(i) + 1,
+                                                 #  pymysql.escape_string(str(line_str)),
+                                                 current_file_id)
                                     # response = cursor.execute(sql_err)
                                     # db.commit()
                                     response = self.mysqlConnOperation.select_one(sql_err)  # 查询此条错误记录是否已经存在,返回一个元组或者空
-                                    print("response:", response)
-                                    # if response == 1:
-                                    if response is not None:
-                                        print("数据已存在！")
+                                    if response:
+                                        print("错误已存在！")
+                                        print("response:", response[0], type(response[0]))
+                                        if response[0] not in ErrorID_record:
+                                            ErrorID_record.append(response[0])  # 将此次查询到的--已经存在--的错误的错误Id保存下来，
+                                            print("ErrorId_record:", ErrorID_record)
                                     else:
                                         # try:
                                         select_fileID_sql = "select CodeID from Code where FilePath = '%s'and " \
-                                                            "StudentID = '%s'" % (glo_file_path, studentID)
+                                                            "StudentID = '%s'" % (
+                                                                pymysql.escape_string(glo_file_path), student_id)
                                         file_id = self.mysqlConnOperation.select_one(select_fileID_sql)
                                         print("文件ID查询成功!", file_id)
                                         insert_sql = "insert into error (Name, RuleID, RuleTypeID, Line, " \
                                                      "WrongCode,FileID) values('%s', '%s', '%s', '%s', '%s','%s')" % \
-                                                     (file_name, _ruleid, _ruletypeid, str(int(i) + 1), str(line_str),
+                                                     (pymysql.escape_string(file_name),
+                                                      _ruleid,
+                                                      _ruletypeid,
+                                                      pymysql.escape_string(str(int(i) + 1)),
+                                                      pymysql.escape_string(str(line_str)),
                                                       file_id[0])
                                         # cursor.execute(insert_sql)
                                         # db.commit()
@@ -323,13 +376,35 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                             break
         except IOError as e1:
             print("文件打开问题", e1)
+        finally:
+            '''将以前检查出来，而此次未查询到的错误条目信息中的是否更改属性置为--是-- '''
+            error_length = len(ErrorID_record)
+            print('error_length:', error_length)
+            if 0 == error_length:
+                pass
+            else:
+                # data_lst - ErrorID_record ：差集
+                try:
+                    global data_lst
+                    print('list-->', data_lst)
+                    print('record-->', ErrorID_record)
+                    ret = None
+                    ret = list(set(data_lst).difference(set(ErrorID_record)))
+                    print('ret:', ret)
+                    ErrorID_record.clear()
+                    if ret:
+                        for i in range(len(ret)):
+                            sql_Corrected = "update error set error.Corrected = '是'where ErrorID = '%s'" % ret[i]
+                            self.mysqlConnOperation.update(sql_Corrected)
+                except Exception as e:
+                    print('空集', e)
 
     def analyze_result(self):
         """
         查询程序分析的结果，从error数据表中查询错误信息
         :return:
         """
-        global glo_file_path
+        global glo_file_path, current_file_id, student_id
         # db = pymysql.connect("localhost", "root", "123456", "cstyle_db")
         # cursor = db.cursor()
         list_path = glo_file_path.split('/')
@@ -339,21 +414,24 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         sql = "select  error.Name, rule.Name,rule.Advice, ruletype.Name, error.Line, error.WrongCode, error.Corrected" \
               " from error left join rule on error.RuleID = rule.RuleID left join ruletype on " \
               "error.RuleTypeID = ruletype.RuleTypeID left join code c on error.FileID = c.CodeID" \
-              " where c.FilePath = '%s' and c.StudentID = '1' order by error.Line " % glo_file_path
+              " where c.CodeID = '%s' and c.StudentID = '%s'and error.Corrected = '否' order by error.Line " % (
+                  current_file_id, student_id)
         try:
             # cursor.execute(sql)
             # data = cursor.fetchall()
-            data = self.mysqlConnOperation.select_all(sql)
+            data, descr = self.mysqlConnOperation.select_all(sql)
             print("代码分析结果查询成功！")
             # print(data)
             length = len(data)
+            '''清空显示器，再更新显示'''
+            self.textBrowser_2.selectAll()
+            self.textBrowser_2.clear()
             for i in range(length):
                 txt = (list(data[i]))
                 print(txt)
-                # for j in range(len(txt)):
-                txt_str = '序号：' + str(i) + '  当前文件名称：' + str(txt[0]) + '  错误行号：第 ' + str(txt[4]) + ' 行' + \
-                          '  错误代码：' + str(txt[5]) + '错误原因：' + str(txt[1]) + '  错误类型：' + str(txt[3]) + '  建议：' + str(
-                    txt[2]) + '\n '
+                # for j in range(len(txt)): '  当前文件名称：' + str(txt[0]) +
+                txt_str = '序号：' + str(i) + '  错误行号：第 ' + str(txt[4]) + ' 行' + '错误原因：' + str(txt[1]) + \
+                          '  错误类型：' + str(txt[3]) + '  建议：' + str(txt[2]) + '  错误代码：' + str(txt[5])  # + '\n '
                 self.textBrowser_2.append(txt_str)
             if 0 == length:
                 self.textBrowser_2.append("未检查出错误!")
@@ -371,6 +449,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         for i in range(length):
             tab = record_tab[i]
             for j in range(len(tab)):
+                '''分析这行代码操作是否是定义一个函数'''
                 if tab[j] in comment_word and 79 == tab[j + 1] and 73 == tab[j + 2]:
                     print("行号：", i + 1)
                     print("hang:", tab)

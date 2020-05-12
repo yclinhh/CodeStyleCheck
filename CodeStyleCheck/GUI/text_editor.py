@@ -23,7 +23,7 @@ class QCodeEditor(QPlainTextEdit):
             # 传递一个参数
             self.editor = editor
             # 信号触发条件：更新字符块，并且会传递当前行数
-            #self.editor.blockCountChanged.connect(self.updateWidth)
+            # self.editor.blockCountChanged.connect(self.updateWidth)
             # 区域更新
             self.editor.updateRequest.connect(self.updateContents)
             self.font = QFont()
@@ -47,7 +47,8 @@ class QCodeEditor(QPlainTextEdit):
                 num += 1
                 blockNumber = block.blockNumber()
                 block_top = self.editor.blockBoundingGeometry(block).translated(self.editor.contentOffset()).top()
-
+                # print("blockNUm:", blockNumber)
+                # print("block", block_top)
                 if blockNumber == self.editor.textCursor().blockNumber():
                     self.font.setBold(True)
                     painter.setPen(QColor("#000000"))
@@ -100,14 +101,14 @@ class QCodeEditor(QPlainTextEdit):
     def highlightCurrentLine(self):
         extraSelections = []
         newCurrentLineNumber = self.textCursor().blockNumber()  # 获取当前光标所在块的编号（块以回车划分）无效返回0
-        if newCurrentLineNumber !=self.currentLineNumber:          # 如果光标换行
+        if newCurrentLineNumber != self.currentLineNumber:          # 如果光标换行
             self.currentLineNumber = newCurrentLineNumber
             lineColor = QColor(Qt.green).lighter(160)   # 设置行的颜色
             selection = QTextEdit.ExtraSelection()  # QTextEdit.ExtraSelection结构提供了一种为文档中已选择指定字符格式的方法
             # print("{1}:{0}".format(selection, newCurrentLineNumber))
             selection.format.setBackground(lineColor)   # 指定选区的背景
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)  # 设置文本的整个宽度为选中状态
-            selection.cursor = self.textCursor()   # 将锚点设置为光标位置，清楚当前选择
+            selection.cursor = self.textCursor()   # 将锚点设置为光标位置，清除当前选择
             selection.cursor.clearSelection()
             extraSelections.append(selection)
             self.setExtraSelections(extraSelections)  # 允许用指定的颜色临时标记文档中的某些区域，并将其指定为选项,括号中为列表形式

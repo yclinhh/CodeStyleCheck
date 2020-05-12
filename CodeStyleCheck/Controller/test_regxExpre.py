@@ -271,7 +271,7 @@ if __name__ == '__main__':
     _9 = 2
     print(_9)
 '''
-    path = '/CodeStyleCheck/cesi.txt'
+    path = '/CodeStyleCheck/cesi.cpp'
     try:
         with open(path, encoding='utf8', mode='r+') as f:
             ''' text = ''.join(f.readlines())
