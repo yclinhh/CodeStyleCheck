@@ -2,7 +2,14 @@
 #include<string>
 #include<cstring>
 using namespace std;
+/*uudvdvdsbvs s s s
 
+v发bfb
+vfvd
+ascs
+dnvdvn当你觉得v
+djsdbvj
+fdsbsds*/
 
 typedef struct list{                        ///
 int data;                                     //kvndknvikdnbvksdnbdkvi百度v本地v但是看到v肯定是你

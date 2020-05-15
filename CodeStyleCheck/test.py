@@ -34,7 +34,6 @@ def sca():
 
 
 if __name__ == '__main__':
-
     # jieshou = []
     # path = 'E:\毕业设计\学生代码规范化检测\CodeStyleCheck\cesi.cpp'
     # try:
@@ -46,9 +45,9 @@ if __name__ == '__main__':
     # except IOError as e:
     #     print(e)for
     # reg = '^.*(?<!([ ]\\+[ ])).*(([\\S]\\+)|([ ]*\\+[\\S])|([ ]*\\+[ ])*).*$'
-    reg = '^[^\\n]*(return)[^\\n]*\\([^\\n]*\\)[^\\n]*$'
+    reg = '^[^;]*;[^;]*$'
     pattern = re.compile(reg)
-    string = '        return( - 1);'
+    string = '  b = b + i; int a;   '
     f = pattern.match(string)
     h = pattern.finditer(string)
     g = re.match(r'^12$', string)
@@ -57,15 +56,12 @@ if __name__ == '__main__':
     print(h)
     for match in h:
         print(match.group())
+    if f:
+        print("匹配f:ok!")
     if not f:
-        print("f:ok!")
+        print('不匹配')
     if g:
         print("g:ok!")
-    res = 1
-    if not res:
-        print(2)
-    else:
-        print(1)
     # path = 'E:\毕业设计\学生代码规范化检测\CodeStyleCheck\cesi.cpp'
     # p = path.split('\\')
     # print(type(p))

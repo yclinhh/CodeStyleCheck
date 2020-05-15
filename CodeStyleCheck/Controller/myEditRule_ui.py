@@ -150,7 +150,7 @@ class MyEditRule(QWidget, Ui_Form):
 
     def del_data(self):
         # 是否删除的对话框
-        reply = QMessageBox.question(self, '提示', '确定删除该行信息吗?', QMessageBox.Yes | QMessageBox.No,
+        reply = QMessageBox.question(self, '提示', '当前选择行为第{0}行，确定删除该行信息吗?'.format(self.tableWidget.currentRow()), QMessageBox.Yes | QMessageBox.No,
                                      QMessageBox.No)
         if reply == QMessageBox.Yes:
             # 当前行

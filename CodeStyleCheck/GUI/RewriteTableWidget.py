@@ -90,9 +90,10 @@ class MyTableWidget(QTableWidget):
             if event.type() == QEvent.ToolTip:
                 # self.setCursor(Qt.ArrowCursor)
                 print("当前鼠标位置为:", event.pos())
+                # 发送信号，传递当前鼠标坐标
                 self.updateTableTooltipSignal.emit(event.pos())
                 # 设置提示气泡显示范围矩形框,当鼠标离开该区域则ToolTip消失
-                rect = QRect(self.mouse_x, self.mouse_y, 30, 10)  # QRect(x,y,width,height)
+                rect = QRect(self.mouse_x, self.mouse_y, 20, 10)  # QRect(x,y,width,height)
                 # 设置QSS样式
                 self.setStyleSheet(
                     """QToolTip{border:10px;
@@ -105,6 +106,7 @@ class MyTableWidget(QTableWidget):
                        font-size:14px;
                        font-family:"微软雅黑";
                     }""")
+                # 刷新
                 QApplication.processEvents()
                 # 在指定位置展示ToolTip
                 QToolTip.showText(QCursor.pos(), self.tool_tip, self, rect, 1500)
@@ -120,4 +122,5 @@ class MyTableWidget(QTableWidget):
                 """
             return QWidget.eventFilter(self, object, event)
         except Exception as e:
+            print(e)
             traceback.print_exc()

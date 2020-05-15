@@ -5,7 +5,7 @@
 # @File : show_result.py
 import sys
 
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtGui, QtWidgets, Qt
 from PyQt5.QtWidgets import QWidget, QTableWidgetItem, QFrame, QHeaderView, QAbstractItemView, QApplication
 
 from CodeStyleCheck.GUI.RewriteTableWidget import MyTableWidget
@@ -90,6 +90,9 @@ class MyResult(QWidget):
                 temp_data = data[i][j]
                 data0 = QTableWidgetItem(str(temp_data))
                 self.tableWidget.setItem(i, j, data0)
+                if temp_data == '是':
+                    print('&&&&&&&&&&&&&&&&&&&&&&&&&&&')
+                    self.tableWidget.item(i, j).setBackground(QtGui.QColor(152, 251, 152))
 
 
 if __name__ == '__main__':

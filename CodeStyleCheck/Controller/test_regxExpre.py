@@ -6,6 +6,8 @@
 import re
 import sys
 import copy
+import traceback
+
 import pymysql
 # di = ((1, 'char'), (2, 'double'), (3, 'enum'), (4, 'float'), (5, 'int'), (6, 'long'), (7, 'short'),
 #       (8, 'signed'), (9, 'union'), (10, 'unsigned'), (11, 'struct'), (12, 'void'), (13, 'auto'),
@@ -36,7 +38,7 @@ word = {'char': 1, 'double': 2, 'enum': 3, 'float': 4, 'int': 5,
         '?:': 70, '/*': 71, '//': 72, '(': 73, '[': 74, '{': 75, '.': 76, ',': 77, '\'\'': 78,
         '标识符': 79, '空行': 80, '空格': 81, '代码行': 82, ')': 83, ']': 84, '}': 85, ';': 86}
 # 运算符
-operator = ['+', '-', '*', '/', '%', '++', '--', '+=', '-=', '+=', '/=',  # 算术运算符
+operator = ['+', '-', '*', '/', '%', '++', '--', '+=', '-=', '/=',  # 算术运算符
             '==', '!=', '>', '<', '>=', '<=',  # 关系运算符
             '&', '|', '^', '~', '<<', '>>',  # 位运算符
             '&&', '||', '!',  # 逻辑运算符
@@ -51,16 +53,20 @@ _lineCount = 0  # 记录当前是第几行
 _judgeStr = ''  # 保存当前要判断的字符串
 _chBegin = 0  # 当前判断开始，第一个判断字符的位置
 li = []  # 记录都分析出了哪些保留字界符操作符
+_commentLineNumTab = []  # 保存注释出现的行号
 #  把整个代码文件都扫描完在进行规则匹配，这样匹配时再按行读取匹配，词法分析还是一个字符一个字符分析
 #  把每一行匹配单词的ID保存为一个列表存起来--------------------------------
 
 
 def Scanner(para):
-    print("word type:", type(word))
-    global _lineErr, _recordTab, _keyWord, _lineCount,  _judgeStr, _chBegin, li
+    global _lineErr, _recordTab, _keyWord, _lineCount,  _judgeStr, _chBegin, li, _commentLineNumTab
+    _recordTab = []  # 初始化
+    _commentLineNumTab = []
     _chBegin = 0  # 判断的字符串的起始位置
+    _lineCount = 0  # 初始化
     _lineCount += 1  # 行号
     _judgeStr = ''  # 字符串清空
+    li.clear()
     _keyWord = copy.deepcopy(_keyWord)  # 深拷贝
     _keyWord.clear()
     # _recordTab.clear()
@@ -77,21 +83,33 @@ def Scanner(para):
     while pos < length:
         # print("num{0}:{1}".format(pos, code[pos]),)
         _judgeStr += code[pos]
-        if code[pos] == '#':
+        if code[pos] == '#':    # 过滤头文件
             while code[pos] != '\n':
                 pos += 1
         if code[pos] == '/':
             if code[pos+1] == '*':  # 进入注释，清空_judgeStr
+                _commentLineNumTab.append(_lineCount)  # 记录注释第一行行号
                 _judgeStr = ''
                 pos += 2
+                if code[pos] == '\n':
+                    _lineCount += 1
+                    _commentLineNumTab.append(_lineCount)
+                    '''添加'''
+                    _recordTab.append(_keyWord)
+                    _keyWord = copy.deepcopy(_keyWord)  # 深拷贝
+                    _keyWord.clear()  # 关键字列表清空（因为只存当前行的关键字ID,当前行变化了）
                 while code[pos] != '*' or code[pos+1] != '/':
                     pos += 1
                     if '\n' == code[pos]:
                         _lineCount += 1  # 行数变了，
                         # _chBegin = pos+1    # 字符起始位置也变
-                        # _judgeStr.replace(_judgeStr, '')  # 清空
+                        _commentLineNumTab.append(_lineCount)  # 记录注释第_lineCount行
                         _judgeStr = ''
-                        _recordTab.append(_keyWord)   # 错误记录表记录添加当前检测出的ID列表，ID列表可能为空
+                        '''
+                        必须进行深拷贝再清空的原因是：_recordTab列表中存_keyWord列表为元素（相当引用关系），直接执行celar函数会导致
+                        _recordTab表中元素也是清空的，深拷贝则会产生一个新地址，这样再清空_keyWord就不会影响_recordTab
+                        '''
+                        _recordTab.append(_keyWord)  # 错误记录表记录添加当前检测出的ID列表，ID列表可能为空
                         _keyWord = copy.deepcopy(_keyWord)  # 深拷贝
                         _keyWord.clear()  # 关键字列表清空（因为只存当前行的关键字ID,当前行变化了）
                     # try:
@@ -102,9 +120,11 @@ def Scanner(para):
                     #     print("注释出错，没有*/！！！！！！！！！！！！！！！")
 
                 pos += 2  # 找到*/，直接跳过
+                # _commentLineNumTab.append(_lineCount+1)  # 由于直接跳过*/,所以本应该在*/之后判断一次\n，这里提前添加
             elif code[pos+1] == '/':
-                while code[pos] != '\n':
+                while code[pos] != '\n':  # code[pos] == '\n'退出循环
                     pos += 1
+                _commentLineNumTab.append(_lineCount)  # 直接将当前行号添加
                 pos += 1
                 _lineCount += 1   # 行数加1
                 # _chBegin = pos+1
@@ -216,7 +236,7 @@ def Scanner(para):
         if sec == 15:
             sec = 0
             print('\n')
-    return _recordTab
+    return _recordTab, _commentLineNumTab
 
 
 if __name__ == '__main__':
@@ -271,7 +291,7 @@ if __name__ == '__main__':
     _9 = 2
     print(_9)
 '''
-    path = '/CodeStyleCheck/cesi.cpp'
+    path = 'E:/毕业设计/学生代码规范化检测/CodeStyleCheck/cesi.cpp'
     try:
         with open(path, encoding='utf8', mode='r+') as f:
             ''' text = ''.join(f.readlines())
@@ -294,9 +314,37 @@ if __name__ == '__main__':
                             '''
             text = f.read()
             print("check")
-            Scanner(text)
+            a, b = Scanner(text)
+            print('b', b)
     except IOError as e:
         print(e)
-'''
+        traceback.print_exc()
+    path = 'E:/毕业设计/学生代码规范化检测/CodeStyleCheck/ceshi2.txt'
+    print('***************************_recordTab:', _recordTab)
+    try:
+        with open(path, encoding='utf8', mode='r+') as f:
+            ''' text = ''.join(f.readlines())
+                        print("text类型：", type(text))
+                        deal_text = re.sub(r'\/\*[^(*/)]*\*\/|\/\/.*', '1', text)  # 过滤注释
+                        print(deal_text)
+                        #for line in text.split('\n'):
+                        for line in text:
+                            line = line.strip()
+                            #line = line.replace('\\t', '')
+                            #line = line.replace('\\n', '')
+                            print("num3:", line, end='')
 
-'''
+                            if line == '\n':
+                                print('woshi----------------------------------------------------------')
+                            if not line:
+                                continue
+                            else:
+                                pass
+                            '''
+            text = f.read()
+            print("check")
+            a, b = Scanner(text)
+            print('\nb', b)
+    except IOError as e:
+        print(e)
+        traceback.print_exc()
