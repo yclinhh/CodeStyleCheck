@@ -91,7 +91,6 @@ class MyResult(QWidget):
                 data0 = QTableWidgetItem(str(temp_data))
                 self.tableWidget.setItem(i, j, data0)
                 if temp_data == '是':
-                    print('&&&&&&&&&&&&&&&&&&&&&&&&&&&')
                     self.tableWidget.item(i, j).setBackground(QtGui.QColor(152, 251, 152))
 
 

@@ -45,9 +45,17 @@ if __name__ == '__main__':
     # except IOError as e:
     #     print(e)for
     # reg = '^.*(?<!([ ]\\+[ ])).*(([\\S]\\+)|([ ]*\\+[\\S])|([ ]*\\+[ ])*).*$'
-    reg = '^[^;]*;[^;]*$'
+    aa = '   dd  '
+    aa.strip()
+    print('aa', aa)
+    h = '    sc             '
+    print('h:', h)
+    pos = 1
+    s = ' ' * pos + h.strip()
+    print('s:',s)
+    reg = '^[ ]*$'
     pattern = re.compile(reg)
-    string = '  b = b + i; int a;   '
+    string = '\n'
     f = pattern.match(string)
     h = pattern.finditer(string)
     g = re.match(r'^12$', string)

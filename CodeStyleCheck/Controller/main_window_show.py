@@ -29,7 +29,7 @@ ErrorID_record = []  # 错误记录表，记录本次运行检查获取的所有
 student_id = 1
 current_file_id = -1  # 当前文件id
 data_lst = []  # 打开文件时，获取当前文件错误信息，id 保存在此列表中
-
+record_align_spaceNum = {}  # 记录对齐行所需要的缩进等级,key:value(行号：等级)
 # commmet_word = 'char': 1, 'double': 2, 'enum': 3, 'float': 4, 'int': 5,
 #         'long': 6, 'short': 7, 'signed': 8, 'union': 9, 'unsigned': 10,
 #         'struct': 11, 'void':12, '标识符': 79, '(': 73
@@ -258,13 +258,12 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         try:
             with open(glo_file_path, mode='r', encoding='utf8') as f:
                 text0 = f.read()
-                record_tab, commentLineNum_Tab = Scanner(text0)  # commentLineNum_Tab = []  保存注释所在行行号
-                print("record_tab:", record_tab)
-                self.mysql_operate(text0, commentLineNum_Tab)
-                # self.analyze_align(text0)
-
+            record_tab, commentLineNum_Tab = Scanner(text0)  # commentLineNum_Tab = []  保存注释所在行行号
+            print("record_tab:", record_tab)
+            self.mysql_operate(text0, commentLineNum_Tab)
         except IOError as e:
             print(e)
+            traceback.print_exc()
 
     def mysql_operate(self, text0_para1, commentLineNumTab_para2):
         """
@@ -345,7 +344,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                             ErrorID_record.append(response[0])  # 将此次查询到的--已经存在--的错误的错误Id保存下来，
                                             print("ErrorId_record:", ErrorID_record)
                                         # 更新错误行代码
-                                        update_sql = "update error set error.WrongCode = '%s' where error.ErrorID = '%s'"\
+                                        update_sql = "update error set error.WrongCode = '%s' where error.ErrorID = '%s'" \
                                                      % (pymysql.escape_string(str(line_str)), response[0])
                                         self.mysqlConnOperation.update(update_sql)
                                     else:
@@ -365,7 +364,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                                       current_file_id)
                                         # cursor.execute(insert_sql)
                                         # db.commit()
-                                        if int(var) == 86 and 'for' in str(line_str):    # ';':86,for 语句中可以有多个';'
+                                        if int(var) == 86 and 'for' in str(line_str):  # ';':86,for 语句中可以有多个';'
                                             pass
                                         else:
                                             self.mysqlConnOperation.insert(insert_sql)
@@ -392,7 +391,10 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         finally:
             text0 = text0_para1
             commentLineNum_Tab = commentLineNumTab_para2
+            '''分析注释函数'''
             self.analyze_comment(text0, commentLineNum_Tab)
+            '''分析缩进对齐、空行函数'''
+            self.analyze_align()
             '''将以前检查出来，而此次未查询到的错误条目信息中的是否更改属性置为--是-- '''
             error_length = len(ErrorID_record)
             print('error_length:', error_length)
@@ -420,7 +422,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         查询程序分析的结果，从error数据表中查询错误信息
         :return:
         """
-        global glo_file_path, current_file_id, student_id
+        global glo_file_path, current_file_id, student_id, record_align_spaceNum
         # db = pymysql.connect("localhost", "root", "123456", "cstyle_db")
         # cursor = db.cursor()
         list_path = glo_file_path.split('/')
@@ -446,14 +448,27 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                 txt = (list(data[i]))
                 print(txt)
                 # for j in range(len(txt)): '  当前文件名称：' + str(txt[0]) +
-                txt_str = '序号：' + str(i) + '  错误行号：第 ' + str(txt[4]) + ' 行' + '错误原因：' + str(txt[1]) + \
-                          '  错误类型：' + str(txt[3]) + '  建议：' + str(txt[2]) + '  错误代码：' + str(txt[5])  # + '\n '
+                if txt[3] == '对齐':
+                    # 当前行号为 txt[4]
+                    print('--', txt[3], type(txt[3]))
+                    print('--------------------------', record_align_spaceNum)
+                    space = record_align_spaceNum.get('space')
+                    indentClass = record_align_spaceNum.get(int(txt[4]))
+                    print('indentClass:', indentClass, i + 1)
+                    txt_str = '序号：' + str(i + 1) + '  错误行号：第 ' + str(txt[4]) + ' 行' + '错误原因：' + str(txt[1]) + \
+                              '  错误类型：' + str(txt[3]) + '  建议：缩进' + str(indentClass * space) + '个ASCAll空格字符' + '  错误代码：' + str(txt[5])
+                else:
+                    txt_str = '序号：' + str(i + 1) + '  错误行号：第 ' + str(txt[4]) + ' 行' + '错误原因：' + str(txt[1]) + \
+                              '  错误类型：' + str(txt[3]) + '  建议：' + str(txt[2]) + '  错误代码：' + str(txt[5])  # + '\n '
                 self.textBrowser_2.append(txt_str)
             if 0 == length:
                 self.textBrowser_2.append("未检查出错误!")
         except Exception as e:
             print(e)
+            traceback.print_exc()
             print("查询失败：analyze_result函数")
+        finally:
+            record_align_spaceNum.clear()
 
     # 分析注释  初始化也可以加上
     def analyze_comment(self, para, commentTab):
@@ -484,10 +499,14 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                 file_name = list_path[-1]  # 获取文件名
                                 # ['44', '每个函数前应该有注释声明', '/*注释*/', '每个函数前应该有注释声明', '/*注释*/ int fun(para)', '1', '71']
                                 # ['45', '每个变量声明后应该注释', '//注释', '每个变量声明后应该注释', 'int i=0; //注释', '1', '72']
+                                sql_select = "select RuleID from rule where RuleTypeID = '%s'and WordID = '%s'" % (
+                                1, 71)  # ruleType = 1--->注释
+                                rece = self.mysqlConnOperation.select_one(sql_select)
+                                print('rece', rece)
                                 sql_err = "select * from error where Name = '%s'and RuleID = '%d' and RuleTypeID" \
                                           "= '%d'and Line = '%d'and FileID = '%s'" \
                                           % (pymysql.escape_string(file_name),
-                                             44,
+                                             rece[0],
                                              1,
                                              currLineNum,
                                              current_file_id)
@@ -500,13 +519,13 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                         print("ErrorId_record:", ErrorID_record)
                                     # 更新错误行代码
                                     update_sql = "update error set error.WrongCode = '%s' where error.ErrorID = '%s'" \
-                                                 % (pymysql.escape_string(str(txt[currLineNum])), response[0])
+                                                 % (pymysql.escape_string(str(txt[currLineNum])), int(response[0]))
                                 else:  # 错误不存在
 
                                     sql_insert = "insert into error (Name, RuleID, RuleTypeID, Line, WrongCode,FileID)" \
                                                  " values('%s', '%s', '%s', '%s', '%s','%s')" % \
                                                  (pymysql.escape_string(file_name),
-                                                  44,
+                                                  rece[0],
                                                   1,
                                                   currLineNum,
                                                   pymysql.escape_string(str(txt[currLineNum])),
@@ -521,11 +540,80 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             else:
                 pass
 
-    # 分析缩进与对齐
-    def analyze_align(self, para):
-        text = para
+    # 分析缩进与对齐,还有空行
+    def analyze_align(self):
         sql = "select Express from rule where RuleTypeID = '%s'" % 4
         receiveInfo = self.mysqlConnOperation.select_one(sql)
         print('每一级缩进空格数：', receiveInfo[0], type(receiveInfo[0]))  # space[0]为str类型
         # 每一级缩进空格数
         space = int(receiveInfo[0])
+        global record_align_spaceNum  # 存储错误行所需要的缩进等级
+        record_align_spaceNum['space'] = space  # 此处存储规则中的每一级缩进空格个数
+        # 分析空行正则表达式
+        blankLineRegx = '^[ ]*$'
+        global glo_file_path
+        text_list = None
+        with open(glo_file_path, mode='r', encoding='utf8') as f:
+            text_list = f.readlines()
+        txt_length = len(text_list)
+        print('text', text_list)
+        pos = 0  # 位置坐标，记录行号
+        indent_class = 0  # 缩进级别为 0
+        line_start = 0  # 新一行的开始标志
+        newText_list = []  # 存储缩进正确后的每一行字符
+        while pos < txt_length:
+            lineStr = text_list[pos]
+            if '{' in lineStr:
+                newlineStr = ' ' * indent_class * space + lineStr.strip(' ')  #+ '\n'
+                indent_class += 1  # 缩进级别加1，这条语句不能提前
+            elif '}' in lineStr:
+                indent_class -= 1  # 缩进级别减1，遇到'}' *先* 执行缩进级别减1
+                newlineStr = ' ' * indent_class * space + lineStr.strip(' ')  # + '\n'
+            else:
+                # if pos == txt_length-1:
+                #     newlineStr = ' ' * indent_class * space + lineStr.strip()
+                # else:
+                newlineStr = ' ' * indent_class * space + lineStr.strip(' ')  # + '\n'
+            newText_list.append(newlineStr)
+            currentPos = pos + 1
+            if newlineStr == lineStr:
+                print('缩进正确,当前行号：', pos)
+            else:  # 缩进不正确
+                # 存储错误行缩进等级
+                record_align_spaceNum[currentPos] = indent_class
+                global current_file_id  # 当前文件id号
+                select_sql = "select ErrorID from error where RuleTypeID='%s' and Line = '%s' and FileID = '%s'" \
+                             % (4, currentPos, current_file_id)
+                response = self.mysqlConnOperation.select_one(select_sql)
+                if response:  # 错误已经存在
+                    global ErrorID_record
+                    if response[0] not in ErrorID_record:
+                        ErrorID_record.append(response[0])
+                        print("ErrorId_record:", ErrorID_record)
+                        # 更新错误行代码
+                        update_sql = "update error set error.WrongCode = '%s' where error.ErrorID = '%s'" \
+                                     % (pymysql.escape_string(str(lineStr)), int(response[0]))
+                        self.mysqlConnOperation.update(update_sql)
+                else:
+                    list_path = glo_file_path.split('/')
+                    file_name = list_path[-1]  # 获取文件名
+                    # 查找规则id
+                    sql_select_ruleId = "select RuleID from rule where RuleTypeID = 4 and WordID = 82"
+                    tup_rule_id = self.mysqlConnOperation.select_one(sql_select_ruleId)
+                    # 插入错误行信息
+                    sql_insert = "insert into error (Name, RuleID, RuleTypeID, Line, WrongCode,FileID)" \
+                                 " values('%s', '%s', '%s', '%s', '%s','%s')" % \
+                                 (pymysql.escape_string(file_name),
+                                  int(tup_rule_id[0]),
+                                  4,
+                                  currentPos,
+                                  pymysql.escape_string(str(lineStr)),
+                                  current_file_id)
+                    self.mysqlConnOperation.insert(sql_insert)
+            pos += 1
+        print("\nsuojinright:")
+        for i in range(len(newText_list)):
+            print(newText_list[i], end='')
+        print('\nyuanlai:')
+        for i in range(len(text_list)):
+            print(text_list[i], end='')
