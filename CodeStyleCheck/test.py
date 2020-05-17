@@ -45,9 +45,13 @@ if __name__ == '__main__':
     # except IOError as e:
     #     print(e)for
     # reg = '^.*(?<!([ ]\\+[ ])).*(([\\S]\\+)|([ ]*\\+[\\S])|([ ]*\\+[ ])*).*$'
-    aa = '   dd  '
-    aa.strip()
+    aa = '^   dd  $'
+    aa = '1234567'
+    temp = aa[0:-1]
     print('aa', aa)
+    print('te', temp,type(temp))
+    cc = aa.lstrip('^')
+    print('cc', cc)
     h = '    sc             '
     print('h:', h)
     pos = 1

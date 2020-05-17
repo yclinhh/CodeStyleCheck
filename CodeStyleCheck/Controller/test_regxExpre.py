@@ -59,6 +59,14 @@ _commentLineNumTab = []  # 保存注释出现的行号
 
 
 def Scanner(para):
+    """
+    为了在for语句中';'可以多次出现，方法:检测到for 时不用再将当前行';'的种别码加入到列表中，
+    设计一个标志位forFlag= False 遇到for,forFlag = True,当行号变化时，forFlag =False,等于True时，
+    检测到';'不添加入列表中
+    :param para:
+    :return:
+    """
+    forFlag = False  # for ( ; ; ) 标志位
     global _lineErr, _recordTab, _keyWord, _lineCount,  _judgeStr, _chBegin, li, _commentLineNumTab
     _recordTab = []  # 初始化
     _commentLineNumTab = []
@@ -145,6 +153,7 @@ def Scanner(para):
             _keyWord = copy.deepcopy(_keyWord)  # 深拷贝
             _keyWord.clear()
             _judgeStr = ''
+            forFlag = False
         elif code[pos] == '\t' or code[pos] == '\r' or code[pos] == '\v':  # 过滤制表符、回车符、垂直制表符
             pos += 1
         elif code[pos] == ' ' or code[pos] in delimiters or code[pos] in operator:
@@ -152,8 +161,12 @@ def Scanner(para):
                 _judgeStr = _judgeStr[:-1]
                 if _judgeStr in word:
                     # 保留字
-                    _keyWord.append(word.get(_judgeStr))
+                    get_value = word.get(_judgeStr)
+                    if get_value is not None:
+                        _keyWord.append(get_value)
                     li.append(_judgeStr)
+                    if _judgeStr == 'for':
+                        forFlag = True
                 # elif _judgeStr[0] != '#':
                 #     # 标识符
                 #     _keyWord.append(word.get('标识符'))
@@ -170,7 +183,12 @@ def Scanner(para):
                 pass
             # 字符是界符
             if code[pos] in delimiters:
-                _keyWord.append(word.get(code[pos]))
+                if forFlag and code[pos] == ';':
+                    pass
+                else:
+                    get_value = word.get(code[pos])
+                    if get_value is not None:
+                        _keyWord.append(get_value)
                 li.append(code[pos])
             # 字符是运算符
             elif code[pos] in operator:
@@ -186,8 +204,9 @@ def Scanner(para):
                 if code[pos+1] in operator:
                     pos += 1
                     s += code[pos]
-
-                _keyWord.append(word.get(s))
+                get_value = word.get(s)
+                if get_value is not None:
+                    _keyWord.append(get_value)
                 li.append(s)
             _judgeStr = ''
             pos += 1
