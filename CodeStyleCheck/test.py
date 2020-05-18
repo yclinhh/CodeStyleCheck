@@ -45,11 +45,14 @@ if __name__ == '__main__':
     # except IOError as e:
     #     print(e)for
     # reg = '^.*(?<!([ ]\\+[ ])).*(([\\S]\\+)|([ ]*\\+[\\S])|([ ]*\\+[ ])*).*$'
-    aa = '^   dd  $'
-    aa = '1234567'
-    temp = aa[0:-1]
-    print('aa', aa)
-    print('te', temp,type(temp))
+    aa = '^.*[^ ][ ]\\|=[ ][^ ]+.*$'
+    line = 'int i=i+1,j=j +1 c|= b     a  s'
+    pattern = re.compile(aa)
+    a = pattern.sub(' + ', line)
+    b = pattern.match(line)
+    print('a', a)
+    print('b',b)
+    print('te',pattern)
     cc = aa.lstrip('^')
     print('cc', cc)
     h = '    sc             '

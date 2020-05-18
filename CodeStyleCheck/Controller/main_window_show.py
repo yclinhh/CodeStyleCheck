@@ -266,6 +266,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             print(e)
             traceback.print_exc()
 
+    # 核心检测函数
     def mysql_operate(self, text0_para1, commentLineNumTab_para2):
         """
         逐个分析单词，将分析结果保存在error数据表里
@@ -400,7 +401,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             '''分析注释函数'''
             self.analyze_comment(text0, commentLineNum_Tab)
             '''分析缩进对齐、空行函数'''
-            self.analyze_align()
+            newAlignCode = self.analyze_align()
             '''将以前检查出来，而此次未查询到的错误条目信息中的是否更改属性置为--是-- '''
             error_length = len(ErrorID_record)
             print('error_length:', error_length)
@@ -423,8 +424,9 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
             except Exception as e:
                 print('空集', e)
             '''最后一步：生成正确代码'''
-            self.produce_right()
+            self.produce_right(newAlignCode)
 
+    # 显示分析结果
     def analyze_result(self):
         """
         查询程序分析的结果，从error数据表中查询错误信息
@@ -462,7 +464,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                     print('--------------------------', record_align_spaceNum)
                     space = record_align_spaceNum.get('space')
                     indentClass = record_align_spaceNum.get(int(txt[4]))
-                    print('indentClass:', indentClass,'序号：', i + 1)
+                    print('indentClass:', indentClass, '序号：', i + 1)
                     txt_str = '序号：' + str(i + 1) + '  错误行号：第 ' + str(txt[4]) + ' 行' + '错误原因：' + str(txt[1]) + \
                               '  错误类型：' + str(txt[3]) + '  建议：缩进' + str(
                         indentClass * space) + '个ASCAll空格字符' + '  错误代码：' + str(txt[5])
@@ -508,7 +510,8 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                 file_name = list_path[-1]  # 获取文件名
                                 # ['44', '每个函数前应该有注释声明', '/*注释*/', '每个函数前应该有注释声明', '/*注释*/ int fun(para)', '1', '71']
                                 # ['45', '每个变量声明后应该注释', '//注释', '每个变量声明后应该注释', 'int i=0; //注释', '1', '72']
-                                sql_select = "select RuleID from rule where RuleTypeID = '%s'and WordID = '%s'" % (1, 71)  # ruleType = 1--->注释
+                                sql_select = "select RuleID from rule where RuleTypeID = '%s'and WordID = '%s'" % (
+                                1, 71)  # ruleType = 1--->注释
                                 rece = self.mysqlConnOperation.select_one(sql_select)
                                 print('rece', rece)
                                 sql_err = "select * from error where Name = '%s'and RuleID = '%d' and RuleTypeID" \
@@ -527,7 +530,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                         print("ErrorId_record:", ErrorID_record)
                                     # 更新错误行代码
                                     update_sql = "update error set error.WrongCode = '%s' where error.ErrorID = '%s'" \
-                                                 % (pymysql.escape_string(str(txt[currLineNum-1])), int(response[0]))
+                                                 % (pymysql.escape_string(str(txt[currLineNum - 1])), int(response[0]))
                                 else:  # 错误不存在
 
                                     sql_insert = "insert into error (Name, RuleID, RuleTypeID, Line, WrongCode,FileID)" \
@@ -536,7 +539,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                                   rece[0],
                                                   1,
                                                   currLineNum,
-                                                  pymysql.escape_string(str(txt[currLineNum-1])),
+                                                  pymysql.escape_string(str(txt[currLineNum - 1])),
                                                   current_file_id)
                                     self.mysqlConnOperation.insert(sql_insert)
                             except Exception as e:
@@ -678,7 +681,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         #     print(text_list[i], end='')
 
     # 生成正确代码
-    def produce_right(self):
+    def produce_right(self, newAlignCodePara):
         """
         1.查找错误表中当前文件下所有corrected='否'的错误信息，主要查找规则id与行号，返回元组
         2.根据规则id与相应的行号进行改正
@@ -688,21 +691,56 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         3.代码行 codeLine = []
         4.对齐 用现成的代码文件列表，从缩进函数传进来
         5.空格  spaceLine = []
+        '################################################[]()'规则中还没有录入#######################
         :return:
         """
+        spaceLine_1 = [',', '=', '&', '-', '/', '%', '==', '!=', '>', '<', '>=', '<=', '&&', '||', '~', '>>', '<<',
+                       '-=', '/=', '%=', '<<=', '>>=', '&=', '|=']
+        # 需要//转义
+        spaceLine_2 = ['|', '?', '+', '*', '^', '+=', '*=', '^=']
+
         global current_file_id, glo_file_path
-        sql_select = "select Line, error.RuleID, error.RuleTypeID,Express from error left join rule on error.RuleID = rule.RuleID " \
-                     "where error.Corrected = '否' and error.FileID = '%s'" % current_file_id
+        sql_select = "select error.Line, error.RuleID, error.RuleTypeID,rule.Express,word.WordName from error left join rule on error.RuleID = rule.RuleID " \
+                     "left join word on rule.WordID = word.WorID where error.Corrected = '否' and error.FileID = '%s'" % current_file_id
         response, descri = self.mysqlConnOperation.select_all(sql_select)
         print('produce_right:------------->', response)
 
-        with open(glo_file_path, mode='r', encoding='utf8') as f:
-            line_list = f.readlines()
+        newAlignCodeList = newAlignCodePara  # 缩进正确的代码行列表
+
+        # with open(glo_file_path, mode='r', encoding='utf8') as f:
+        #     line_list = f.readlines()
         length_response = len(response)
         for i in range(length_response):
-            tupContent = response[i]
+            tupContent = response[i]  # 获得第 i 个元组
+            lineNum = tupContent[0]  # 行号
+            ruleNum = tupContent[1]  # 规则编号
+            # regExpStr = tupContent[3][1:-1]  # 获得正则表达式,去掉开头的^和结尾的$
+            keyWordName = str(tupContent[4])  # 获得关键词字符串
+            # lineString = line_list[lineNum-1]  # 获得代码文件第lineNum行
+            print('now----------------------------now:', ruleNum, 'linenum:', lineNum, keyWordName)
+            newlineStr = ''
             if tupContent[2] == 5:  # 规则类型为5：空格
-                pass
+                '''根据规则中的表达式改造不行，自己根据wordname拼接字符串成为正则表达式比较可行'''
+                if keyWordName in spaceLine_1:
+                    regExpStr = '[ ]*' + keyWordName + '[ ]*'
+                    replaceStr = ' ' + keyWordName + ' '
+                    pattern = re.compile(regExpStr)
+                    newlineStr = pattern.sub(replaceStr, newAlignCodeList[lineNum - 1])
+                    newAlignCodeList[lineNum - 1] = newlineStr
+                elif keyWordName in spaceLine_2:
+                    regExpStr = '[ ]*\\' + keyWordName + '*[ ]'
+                    replaceStr = ' ' + keyWordName + ' '
+                    pattern = re.compile(regExpStr)
+                    newlineStr = pattern.sub(replaceStr, newAlignCodeList[lineNum - 1])
+                    newAlignCodeList[lineNum - 1] = newlineStr
+                elif keyWordName == '++' or keyWordName == '--':
+                    pass
+                elif keyWordName == '!':
+                    regExpStr = '[ ]*![ ]*'
+                    replaceStr = '[ ]!'
+                    pattern = re.compile(regExpStr)
+                    newlineStr = pattern.sub(replaceStr, newAlignCodeList[lineNum - 1])
+                    newAlignCodeList[lineNum - 1] = newlineStr
             elif tupContent[2] == 3:  # 规则类型3：代码行
                 pass
             elif tupContent[2] == 1:  # 规则类型1:注释

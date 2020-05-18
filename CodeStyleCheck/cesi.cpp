@@ -14,12 +14,12 @@ int main()
 
 
       
-    int a = 10;
-    int b = 0;//
+    int a =10;
+    int b =0;//
     int i;
-    for ( i = 0; i < a;i++ )
+    for ( i = 0; i <a;i++ )
     {
-        b = b + i;
+        b =b+i;
     }
     //
 }
