@@ -45,21 +45,58 @@ if __name__ == '__main__':
     # except IOError as e:
     #     print(e)for
     # reg = '^.*(?<!([ ]\\+[ ])).*(([\\S]\\+)|([ ]*\\+[\\S])|([ ]*\\+[ ])*).*$'
+    headStr = '/*' \
+              '\nFunction: // 函数名称 ' \
+              '\nDescription: // 函数功能、性能等的描述 ' \
+              '\nCalls: // 被本函数调用的函数清单' \
+              '\nCalled By: // 调用本函数的函数清单' \
+              '\nInput: // 输入参数说明，包括每个参数的作用、取值说明及参数间关系。' \
+              '\nOutput: // 对输出参数的说明。' \
+              '\nReturn: // 函数返回值的说明' \
+              '\nOthers: // 其它说明' \
+              '\n*/'
+    print(headStr)
+    ll = '    int i=1; int f;   \n'
+    print('lll:',ll)
+    ll = ll.rstrip()
+    print('lll:',ll)
+    keyWordName = ';'
+    regExpStr = '^([ ]*)' + '(.*)' + keyWordName + '[ ]*([\\S]*).*'
+    # replaceStr = '\\1' + '\\2' + '\n' + '\\1' + keyWordName + '\n'
+    pattern = re.compile(regExpStr)
+    # newlineStr = pattern.sub(replaceStr, '    for (i;i<1;i++)   } dvd  ')
+    countStr = '\\1'
+    blankNum = pattern.sub(countStr, '    for (i;i<1;i++)   }   ')
+    print(blankNum, type(blankNum))
+    regExpStr = ';'
+    pattern = re.compile(regExpStr)
+    replaceStr = keyWordName + '\n' + blankNum
+    newlineStr = pattern.sub(replaceStr, '    int i =1;int a;  ')
+    print(newlineStr)
+    reg = '\\' + keyWordName + '[ ]*([\\w]*).*'
+    reg = '^.*\\{[ ]*([^ ]+.*)$'
+    print(reg)
+    p1 = re.compile(reg)
+    s = '    for (i;i<1;i++)   {   d  dd'
+    jieguo = p1.match(s)
+    jj = p1.sub('\\1', s)
+    print('jieguo:', jieguo)
+    print('jj:',jj)
     aa = '^.*[^ ][ ]\\|=[ ][^ ]+.*$'
     line = 'int i=i+1,j=j +1 c|= b     a  s'
     pattern = re.compile(aa)
     a = pattern.sub(' + ', line)
     b = pattern.match(line)
     print('a', a)
-    print('b',b)
-    print('te',pattern)
+    print('b', b)
+    print('te', pattern)
     cc = aa.lstrip('^')
     print('cc', cc)
     h = '    sc             '
     print('h:', h)
     pos = 1
     s = ' ' * pos + h.strip()
-    print('s:',s)
+    print('s:', s)
     reg = '^[ ]*$'
     pattern = re.compile(reg)
     string = '\n'

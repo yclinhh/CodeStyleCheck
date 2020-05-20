@@ -19,11 +19,10 @@ int main()
     int i;
     for ( i = 0; i <a;i++ )
     {
-        b =b+i;
-    }
+        b =b+i;}
     //
 }
-/**/
+
 int funv()
 {
     int i = 1;

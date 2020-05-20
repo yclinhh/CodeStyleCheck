@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QWidget, QFrame, QTableWidgetItem, QApplication, QHe
 from CodeStyleCheck.GUI.edit_rule import Ui_Form
 from CodeStyleCheck.model.mydb import MysqlOperation
 
-flag_ok = False   # 一个标志，用于防止多次重复提交
+flag_ok = False  # 一个标志，用于防止多次重复提交
 
 
 class EmptyDelegate(QItemDelegate):
@@ -57,12 +57,25 @@ class MyEditRule(QWidget, Ui_Form):
         self.tableWidget.setFrameShape(QFrame.NoFrame)
         # 设置表格颜色
         self.tableWidget.horizontalHeader().setStyleSheet('QHeaderView::section{background:skyblue}')
+        # try:
+        #     with open('./Qss/light.qss', 'r') as f:
+        #         self.setStyleSheet(f.read())
+        # except Exception as e:
+        #     print(e)
+
         '''构建表格插入数据'''
         for i in range(row):
             for j in range(vol):
                 temp_data = data[i][j]
                 data0 = QTableWidgetItem(str(temp_data))
                 self.tableWidget.setItem(i, j, data0)
+
+        sql_ruletype = "select RuleTypeID from ruletype"
+        sql_word = "select worid from word"
+        dataId_ruletype, descr = self.ConnMysql.select_all(sql_ruletype)
+        dataId_word, descr = self.ConnMysql.select_all(sql_word)
+        self.dataId_ruletype_list = [str(dataId_ruletype[i][0]) for i in range(len(dataId_ruletype))]
+        self.dataId_word_list = [str(dataId_word[i][0]) for i in range(len(dataId_word))]
 
         self.NewRule_pushButton.clicked.connect(partial(self.add_data, col_name))
         self.pushButton.clicked.connect(partial(self.ok_data, col_name))
@@ -77,14 +90,15 @@ class MyEditRule(QWidget, Ui_Form):
 
     # 增加一行
     def add_data(self, col_name):
+        global flag_ok
+        flag_ok = False
         row = self.tableWidget.rowCount()
         print(row)
         self.tableWidget.insertRow(row)
-        temp_data = row+1
+        temp_data = row + 1
         data0 = QTableWidgetItem(str(temp_data))
         self.tableWidget.setItem(row, 0, data0)
-        global flag_ok
-        flag_ok = True   # 置该标记为True,表示可以执行提交操作，否则提交按钮锁定
+        flag_ok = True  # 置该标记为True,表示可以执行提交操作，否则提交按钮锁定
 
     def ok_data(self, col_name):
         row = self.tableWidget.rowCount()
@@ -99,19 +113,36 @@ class MyEditRule(QWidget, Ui_Form):
                     val_lst.append(self.tableWidget.item(row - 1, i).text())
         except Exception as e:
             print(e)
-            print('新插入行中输入信息不完整导致报错!')
         print(val_lst)
         print(len(val_lst))
         if len(val_lst) != len(col_name):
             QMessageBox.warning(self, '提醒', '新插入行输入信息不全!\n请重新输入!')
         else:
-            global flag_ok
-            if flag_ok:
-                sql = "insert into rule(name, express, advice, standard, ruletypeid, wordid) VALUES" \
-                      "('%s', '%s', '%s', '%s', '%s','%s')" % (val_lst[1], val_lst[2], val_lst[3], val_lst[4],
-                                                               val_lst[5], val_lst[6])
-                self.ConnMysql.insert(sql)
-                flag_ok = False
+            dataId_ruleType_flag = False
+            dataId_word_flag = False
+            if str(val_lst[5]) not in self.dataId_ruletype_list:
+                dataId_ruleType_flag = True
+            if str(val_lst[6]) not in self.dataId_word_list:
+                dataId_word_flag = True
+            if dataId_ruleType_flag and dataId_word_flag:
+                QMessageBox.warning(self, "提醒", "规则类型ID与关键字ID没有记录，请参照规则类型表与关键字表!")
+            elif dataId_word_flag:
+                QMessageBox.warning(self, "提醒", "关键字id没有记录，请参考关键字表!")
+            elif dataId_ruleType_flag:
+                QMessageBox.warning(self, "提醒", "规则类型ID没有记录，请参考规则类型表!")
+            else:
+                pass
+            if not dataId_ruleType_flag and not dataId_word_flag:
+                global flag_ok
+                if flag_ok:
+                    sql = "insert into rule(name, express, advice, standard, ruletypeid, wordid) VALUES" \
+                          "('%s', '%s', '%s', '%s', '%s','%s')" % (val_lst[1], val_lst[2], val_lst[3], val_lst[4],
+                                                                   val_lst[5], val_lst[6])
+                    self.ConnMysql.insert(sql)
+                    QMessageBox.information(self, "提示", "插入数据成功!")
+                    flag_ok = False
+            else:
+                pass
 
     def view_data(self):
         txt = self.lineEdit.text()
@@ -123,6 +154,7 @@ class MyEditRule(QWidget, Ui_Form):
             row = len(data)
             vol = len(description)
             # 重新设置行号与列号
+            QMessageBox.information(self, "查询结果", "当前已查询到{0}条数据".format(row))
             self.tableWidget.setRowCount(row)
             self.tableWidget.setColumnCount(vol)
             # 查询到内容，更新显示表格
@@ -150,7 +182,8 @@ class MyEditRule(QWidget, Ui_Form):
 
     def del_data(self):
         # 是否删除的对话框
-        reply = QMessageBox.question(self, '提示', '当前选择行为第{0}行，确定删除该行信息吗?'.format(self.tableWidget.currentRow()), QMessageBox.Yes | QMessageBox.No,
+        reply = QMessageBox.question(self, '提示', '当前选择行为第{0}行，确定删除该行信息吗?'.format(self.tableWidget.currentRow()),
+                                     QMessageBox.Yes | QMessageBox.No,
                                      QMessageBox.No)
         if reply == QMessageBox.Yes:
             # 当前行
@@ -167,7 +200,12 @@ class MyEditRule(QWidget, Ui_Form):
                   "and Standard = '%s' and RuleTypeID = '%s'and WordID = '%s'" % (lst[0], lst[1], lst[2],
                                                                                   lst[3], lst[4], lst[5],
                                                                                   lst[6])
-            self.ConnMysql.delete(sql)
+            try:
+                ccount = self.ConnMysql.delete(sql)
+                QMessageBox.information(self, "提示", "删除第{0}数据成功!".format(ccount+1))
+            except Exception as e:
+                print(e)
+                QMessageBox.warning(self, "提醒", "删除第{0}数据失败!".format(ccount))
             # 删除表格
             self.tableWidget.removeRow(row)
 
@@ -187,10 +225,13 @@ class MyEditRule(QWidget, Ui_Form):
                    pymysql.escape_string(del_d[3]),
                    del_d[4], del_d[5], del_d[6],
                    pymysql.escape_string(del_d[0]))
-            self.ConnMysql.update(sql)
+            ccount = self.ConnMysql.update(sql)
+            print('111', ccount)
+            QMessageBox.information(self, "提示", "更新第{0}行数据成功!".format(ccount+1))
         except Exception as e:
             print(e)
             print('当前行号为-1')
+            QMessageBox.warning(self, "提醒", "更新第{0}行数据失败!显示所有数据!".format(-1))
         '''更新整个表格'''
         sql = "SELECT * FROM rule"
         # descr存储数据库表列名
