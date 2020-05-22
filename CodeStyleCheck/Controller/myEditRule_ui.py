@@ -11,6 +11,7 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget, QFrame, QTableWidgetItem, QApplication, QHeaderView, QMessageBox, QItemDelegate, \
     QAbstractItemView
 
+from CodeStyleCheck.GUI.RewriteTableWidget import MyTableWidget
 from CodeStyleCheck.GUI.edit_rule import Ui_Form
 from CodeStyleCheck.model.mydb import MysqlOperation
 
@@ -223,15 +224,15 @@ class MyEditRule(QWidget, Ui_Form):
                   (pymysql.escape_string(del_d[1]),
                    pymysql.escape_string(del_d[2]),
                    pymysql.escape_string(del_d[3]),
-                   del_d[4], del_d[5], del_d[6],
-                   pymysql.escape_string(del_d[0]))
+                   pymysql.escape_string(del_d[4]),
+                   del_d[5], del_d[6], del_d[0])
             ccount = self.ConnMysql.update(sql)
             print('111', ccount)
-            QMessageBox.information(self, "提示", "更新第{0}行数据成功!".format(ccount+1))
+            QMessageBox.information(self, "提示", "更新第{0}条规则成功!".format(del_d[0]))
         except Exception as e:
             print(e)
             print('当前行号为-1')
-            QMessageBox.warning(self, "提醒", "更新第{0}行数据失败!显示所有数据!".format(-1))
+            QMessageBox.warning(self, "提醒", "更新第{0}条规则失败!显示所有数据!".format(-1))
         '''更新整个表格'''
         sql = "SELECT * FROM rule"
         # descr存储数据库表列名

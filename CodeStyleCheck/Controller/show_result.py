@@ -21,6 +21,8 @@ class MyResult(QWidget):
     def __init__(self):
         super(MyResult, self).__init__()
         # self.setupUi(self)
+        self.gridLayout = QtWidgets.QGridLayout(self)
+        self.tableWidget = MyTableWidget()
         self.ConnMysqlOne = MysqlOperation("localhost", "root", "123456", "cstyle_db")
         self.initLayout()
         # self.initUI()  #-----------注意，下面还有一个initUI,这个最后要删除
@@ -35,8 +37,6 @@ class MyResult(QWidget):
 
     # 初始化当前页面布局，表格等。
     def initLayout(self):
-        self.tableWidget = MyTableWidget()
-        self.gridLayout = QtWidgets.QGridLayout(self)
         self.setWindowTitle("错误信息表")
         self.setObjectName("错误信息表")
         self.resize(782, 603)

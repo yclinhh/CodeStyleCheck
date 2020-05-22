@@ -74,9 +74,9 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
 
     def __init__(self):
         super(QMyWindow, self).__init__()
-        self.ui1 = MyEditRule()  # 配置规则界面
+        self.ui1 = MyEditRule()  # 编辑规则界面
         self.ui2 = MyResult()  # 错误显示界面
-        self.ui3 = AnalyzeCompare() # 对比分析界面
+        self.ui3 = AnalyzeCompare()  # 对比分析界面
         self.setupUi(self)
         self.myTextEditor = QCodeEditor()
         self.horizontalLayout.addWidget(self.myTextEditor)

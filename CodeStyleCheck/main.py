@@ -7,13 +7,12 @@
 import sys
 from PyQt5.QtWidgets import QApplication
 from CodeStyleCheck.Controller.main_window_show import QMyWindow, Login
+from CodeStyleCheck.GUI.gui_qss import qss
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     # ui = QMyWindow()
     # ui.show()
-    with open("./Qss/light1.qss") as f:
-        qss = f.read()
     app.setStyleSheet(qss)
     ui_login = Login()
     uiMyWin = QMyWindow()
