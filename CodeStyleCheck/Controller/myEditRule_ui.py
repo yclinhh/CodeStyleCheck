@@ -8,6 +8,7 @@ from functools import partial
 
 import pymysql
 from PyQt5 import QtGui
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QFrame, QTableWidgetItem, QApplication, QHeaderView, QMessageBox, QItemDelegate, \
     QAbstractItemView
 
@@ -18,6 +19,7 @@ from CodeStyleCheck.model.mydb import MysqlOperation
 flag_ok = False  # 一个标志，用于防止多次重复提交
 
 
+# 设置一个代理，返回空editor
 class EmptyDelegate(QItemDelegate):
     def __init__(self, parent):
         super(EmptyDelegate, self).__init__(parent)
@@ -58,26 +60,22 @@ class MyEditRule(QWidget, Ui_Form):
         self.tableWidget.setFrameShape(QFrame.NoFrame)
         # 设置表格颜色
         self.tableWidget.horizontalHeader().setStyleSheet('QHeaderView::section{background:skyblue}')
-        # try:
-        #     with open('./Qss/light.qss', 'r') as f:
-        #         self.setStyleSheet(f.read())
-        # except Exception as e:
-        #     print(e)
-
         '''构建表格插入数据'''
         for i in range(row):
             for j in range(vol):
                 temp_data = data[i][j]
                 data0 = QTableWidgetItem(str(temp_data))
+                data0.setTextAlignment(Qt.AlignCenter)  # 居中显示
                 self.tableWidget.setItem(i, j, data0)
 
         sql_ruletype = "select RuleTypeID from ruletype"
         sql_word = "select worid from word"
         dataId_ruletype, descr = self.ConnMysql.select_all(sql_ruletype)
         dataId_word, descr = self.ConnMysql.select_all(sql_word)
+        '''得到关键字、规则类型两个编号列表'''
         self.dataId_ruletype_list = [str(dataId_ruletype[i][0]) for i in range(len(dataId_ruletype))]
         self.dataId_word_list = [str(dataId_word[i][0]) for i in range(len(dataId_word))]
-
+        '''连接信号与槽函数'''
         self.NewRule_pushButton.clicked.connect(partial(self.add_data, col_name))
         self.pushButton.clicked.connect(partial(self.ok_data, col_name))
 

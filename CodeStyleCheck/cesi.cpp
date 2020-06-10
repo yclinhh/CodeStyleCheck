@@ -1,29 +1,24 @@
 /*
-
 */
 # include <stdio.h>
 # include <math.h>
 /*
 ascs
-dnvdvn当你觉得v
+这是注释
 djsdbvj
 */
 int main()
-{
+{    
 
 
 
-      
-    int a =10;
+             int a =10;
     int b =0;//
-    int i;
-    for ( i = 0; i <a;i++ )
-    {
-        b =b+i;}
-    //
+             int i;
+        for ( i = 0; i <a;i++ ){
+        b =b+i;
+ }
+ 
 }
 
-int funv()
-{
-    int i = 1;
-}
+int funv(){int i = 1;}

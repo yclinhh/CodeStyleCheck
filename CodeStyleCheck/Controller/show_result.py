@@ -6,6 +6,7 @@
 import sys
 
 from PyQt5 import QtGui, QtWidgets, Qt
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QTableWidgetItem, QFrame, QHeaderView, QAbstractItemView, QApplication
 
 from CodeStyleCheck.GUI.RewriteTableWidget import MyTableWidget
@@ -89,9 +90,12 @@ class MyResult(QWidget):
             for j in range(vol):
                 temp_data = data[i][j]
                 data0 = QTableWidgetItem(str(temp_data))
+                data0.setTextAlignment(Qt.AlignCenter)  # 居中显示
                 self.tableWidget.setItem(i, j, data0)
                 if temp_data == '是':
                     self.tableWidget.item(i, j).setBackground(QtGui.QColor(152, 251, 152))
+                if temp_data == '否':
+                    self.tableWidget.item(i, j).setBackground(QtGui.QColor(255, 38, 38))
 
 
 if __name__ == '__main__':

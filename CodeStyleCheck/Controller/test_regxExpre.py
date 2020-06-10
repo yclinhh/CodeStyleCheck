@@ -156,6 +156,11 @@ def Scanner(para):
             forFlag = False
         elif code[pos] == '\t' or code[pos] == '\r' or code[pos] == '\v':  # 过滤制表符、回车符、垂直制表符
             pos += 1
+        elif code[pos] == '"':
+            pos += 1
+            while code[pos] != '"':
+                pos += 1
+            pos += 1
         elif code[pos] == ' ' or code[pos] in delimiters or code[pos] in operator:
             if _judgeStr[0].isalpha() or _judgeStr[0] == '_':   # or _judgeStr[0] == '#'
                 _judgeStr = _judgeStr[:-1]
@@ -183,7 +188,7 @@ def Scanner(para):
                 pass
             # 字符是界符
             if code[pos] in delimiters:
-                if forFlag and code[pos] == ';':
+                if forFlag and code[pos] == ';':  # 过滤for中的；
                     pass
                 else:
                     get_value = word.get(code[pos])
@@ -201,9 +206,9 @@ def Scanner(para):
                     s += code[pos]
                     # s = _judgeStr+code[pos]
 
-                if code[pos+1] in operator:
-                    pos += 1
-                    s += code[pos]
+                # if code[pos+1] in operator:
+                #     pos += 1
+                #     s += code[pos]
                 get_value = word.get(s)
                 if get_value is not None:
                     _keyWord.append(get_value)
@@ -244,6 +249,12 @@ def Scanner(para):
         #     pos += 1
         #     _judgeStr.replace(_judgeStr, '')
         #     # pass 如果以上情况都没有， 跳过，暂时不分
+    '''最后一句如果没有回车符，keyword不会添加到_recordTab中去，这里在添加一次'''
+    _recordTab.append(_keyWord)
+    # print("行号是：{0}，这一行分析出的单词码是：{1}，单词表是{2}".format(_lineCount, _keyWord, _recordTab))
+    _keyWord = copy.deepcopy(_keyWord)  # 深拷贝
+    _keyWord.clear()
+    _judgeStr = ''
     print("扫描完毕")
     print(_recordTab)
     leng = len(_recordTab)
@@ -310,7 +321,7 @@ if __name__ == '__main__':
     _9 = 2
     print(_9)
 '''
-    path = 'E:/毕业设计/学生代码规范化检测/CodeStyleCheck/cesi.cpp'
+    path = 'E:/毕业设计/学生代码规范化检测/CodeStyleCheck/ceshi2.txt'
     try:
         with open(path, encoding='utf8', mode='r+') as f:
             ''' text = ''.join(f.readlines())
@@ -333,6 +344,7 @@ if __name__ == '__main__':
                             '''
             text = f.read()
             print("check")
+            print("text:",text)
             a, b = Scanner(text)
             print('b', b)
     except IOError as e:
@@ -340,30 +352,30 @@ if __name__ == '__main__':
         traceback.print_exc()
     path = 'E:/毕业设计/学生代码规范化检测/CodeStyleCheck/ceshi2.txt'
     print('***************************_recordTab:', _recordTab)
-    try:
-        with open(path, encoding='utf8', mode='r+') as f:
-            ''' text = ''.join(f.readlines())
-                        print("text类型：", type(text))
-                        deal_text = re.sub(r'\/\*[^(*/)]*\*\/|\/\/.*', '1', text)  # 过滤注释
-                        print(deal_text)
-                        #for line in text.split('\n'):
-                        for line in text:
-                            line = line.strip()
-                            #line = line.replace('\\t', '')
-                            #line = line.replace('\\n', '')
-                            print("num3:", line, end='')
-
-                            if line == '\n':
-                                print('woshi----------------------------------------------------------')
-                            if not line:
-                                continue
-                            else:
-                                pass
-                            '''
-            text = f.read()
-            print("check")
-            a, b = Scanner(text)
-            print('\nb', b)
-    except IOError as e:
-        print(e)
-        traceback.print_exc()
+    # try:
+    #     with open(path, encoding='utf8', mode='r+') as f:
+    #         ''' text = ''.join(f.readlines())
+    #                     print("text类型：", type(text))
+    #                     deal_text = re.sub(r'\/\*[^(*/)]*\*\/|\/\/.*', '1', text)  # 过滤注释
+    #                     print(deal_text)
+    #                     #for line in text.split('\n'):
+    #                     for line in text:
+    #                         line = line.strip()
+    #                         #line = line.replace('\\t', '')
+    #                         #line = line.replace('\\n', '')
+    #                         print("num3:", line, end='')
+    #
+    #                         if line == '\n':
+    #                             print('woshi----------------------------------------------------------')
+    #                         if not line:
+    #                             continue
+    #                         else:
+    #                             pass
+    #                         '''
+    #         text = f.read()
+    #         print("check")
+    #         a, b = Scanner(text)
+    #         print('\nb', b)
+    # except IOError as e:
+    #     print(e)
+    #     traceback.print_exc()

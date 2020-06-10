@@ -17,8 +17,11 @@ class MysqlOperation:
         self.db = None
         self.cursor = None
 
-    # 连接数据库
     def connect(self):
+        """
+        连接数据库
+        :return: None
+        """
         try:
             self.db = pymysql.connect(self.host, self.user, self.pwd, self.database)
             self.cursor = self.db.cursor()
@@ -32,8 +35,12 @@ class MysqlOperation:
         self.cursor.close()
         self.db.close()
 
-    # 查询一条数据
     def select_one(self, sql):
+        """
+        查询一条数据
+        :param sql:
+        :return: 以元组形式返回信息
+        """
         res = None
         try:
             self.connect()
@@ -47,8 +54,12 @@ class MysqlOperation:
             print("查询一条数据失败!")
         return res
 
-    # 查询多条数据
     def select_all(self, sql):
+        """
+        查询多条数据
+        :param sql:
+        :return: 元组
+        """
         res = None
         descr = None
         try:
@@ -76,8 +87,12 @@ class MysqlOperation:
     def delete(self, sql):
         return self.__edit(sql)
 
-    # 函数名双下划线开头---->封装此函数为类的私有方法
     def __edit(self, sql):
+        """
+        函数名双下划线开头---->封装此函数为类的私有方法
+        :param sql:
+        :return: 受影响的行
+        """
         count = 0
         try:
             self.connect()

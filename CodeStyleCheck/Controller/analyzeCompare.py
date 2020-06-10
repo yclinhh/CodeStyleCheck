@@ -16,9 +16,14 @@ class AnalyzeCompare(QWidget, Ui_Form):
         self.setupUi(self)
 
     def deal_analyzeCompare_slot(self, pathStr, codeList):
+
         path_str = pathStr
         code = codeList
-        print('接收路径与正确代码成功!')
+        print('接收--路径与正确代码--成功!')
+        self.textBrowser.selectAll()
+        self.textBrowser.clear()
+        self.textBrowser_2.selectAll()
+        self.textBrowser_2.clear()
         try:
             with open(path_str, mode='r', encoding='utf8') as f:
                 for line in f:
@@ -27,5 +32,6 @@ class AnalyzeCompare(QWidget, Ui_Form):
             print(e)
             traceback.print_exc()
         for i in range(len(code)):
-            self.textBrowser_2.append(code[i].rstrip('\n'))
+            if code[i] != '-1':
+                self.textBrowser_2.append(code[i].rstrip('\n'))
 

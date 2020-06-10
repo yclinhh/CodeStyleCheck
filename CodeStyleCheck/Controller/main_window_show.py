@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import *
 
 from CodeStyleCheck.Controller.analyzeCompare import AnalyzeCompare
 from CodeStyleCheck.Controller.myEditRule_ui import MyEditRule
+from CodeStyleCheck.Controller.show_configRule import MyConfigRule
 from CodeStyleCheck.Controller.show_result import MyResult
 from CodeStyleCheck.GUI.InputStuID import Ui_Dialog
 from CodeStyleCheck.GUI.text_editor import QCodeEditor
@@ -77,17 +78,18 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         self.ui1 = MyEditRule()  # 编辑规则界面
         self.ui2 = MyResult()  # 错误显示界面
         self.ui3 = AnalyzeCompare()  # 对比分析界面
+        self.ui4 = MyConfigRule()  # 配置规则页面
         self.setupUi(self)
         self.myTextEditor = QCodeEditor()
         self.horizontalLayout.addWidget(self.myTextEditor)
         self.horizontalLayout.setSpacing(0)  # 去掉文件路径与文本编辑器之间的缝隙
         self.mysqlConnOperation = MysqlOperation("localhost", "root", "123456", "cstyle_db")
-        # try:
-        #     with open('./Qss/light.qss', mode='r') as f:
-        #         self.setStyleSheet(f.read())
-        # except Exception as e:
-        #     print(e)
-        #     traceback.print_exc()
+        self.rulePermissionList = []  # 规则许可，只可以使用这些规则
+        ''''初始化选中所有规则'''
+        sql_ruleid = "select RuleID from rule"
+        res_id, descri = self.mysqlConnOperation.select_all(sql_ruleid)
+        self.rulePermissionList = [i[0] for i in res_id]
+
         self.initUI()
 
     # 后台逻辑处理
@@ -102,20 +104,42 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         self.action_edit.triggered.connect(self.jump_to_1)
         self.action_result.triggered.connect(self.jump_to_2)
         self.action_compare.triggered.connect(self.jump_to_3)
+        self.action_config.triggered.connect(self.jump_to_4)
         self.showResultSignal.connect(self.ui2.deal_showResult_emit_slot)
         self.analyzeCompareSignal.connect(self.ui3.deal_analyzeCompare_slot)
+        self.ui4.transmitRuleSignal.connect(self.deal_emit_transmitRule_slot)
 
     def jump_to_1(self):
+        """
+        展示编辑规则页面
+        :return:
+        """
         self.ui1.show()
 
     def jump_to_2(self):
-        self.showResult_emit_signal()
+        """
+        展示分析结果，错误记录页面
+        :return:
+        """
+        self.showResult_emit_signal()  # 发送信号
         self.ui2.show()
 
     def jump_to_3(self):
+        """
+        对比分析页面
+        :return:
+        """
         global glo_file_path, rightCodeList
         self.analyzeCompareSignal.emit(glo_file_path, rightCodeList)  # 发射信号
         self.ui3.show()
+
+    def jump_to_4(self):
+        """
+        配置规则页面
+        :return:
+        """
+        self.ui4.show()
+
     # # 输入学号
     # def inputInfo(self):
     #     self.dialog = Login()
@@ -124,18 +148,36 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
     #     self.dialog.show()
     #     print("12")
 
-    # 获得学号，打开主界面
+    # 获得允许使用的规则的编号
+    def deal_emit_transmitRule_slot(self, ruleIdList):
+        """
+        接收配置规则页面传回来的规则id列表--槽函数
+        :param ruleIdList:
+        :return:
+        """
+        print('我是主窗口，我收到了信号：', ruleIdList)
+        self.rulePermissionList = ruleIdList
+
     def deal_emit_slot(self, StuID):
+        """
+        接收来自登陆界面的信号---接收学号
+        打开主界面
+        :param StuID:
+        :return:
+        """
         time.sleep(0.5)
         global student_id
         student_id = ''
         student_id = str(StuID)
+        print("成功接收studentID:----->", student_id)
         self.show()
         Login().close()
-        print("成功接收studentID:----->", student_id)
 
-    # 结果显示界面，发射信号函数   # 发射自定义信号槽函数，传递参数给结果显示窗口函数
     def showResult_emit_signal(self):
+        """
+        发射自定义信号槽函数，传递参数给结果显示窗口函数
+        :return:
+        """
         global current_file_id, student_id
         self.showResultSignal.emit(current_file_id, student_id)
         print("成功发射current_file_id, student_id:----->", current_file_id, student_id)
@@ -257,13 +299,20 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         reply = QMessageBox.question(parent, '提示', '你确定要关闭吗？',
                                      QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
+            self.ui1.close()
+            self.ui2.close()
+            self.ui3.close()
+            self.ui4.close()
             event.accept()
         else:
             event.ignore()
 
     # 退出
-    @staticmethod
-    def mainWindow_quit():
+    def mainWindow_quit(self):
+        self.ui1.close()
+        self.ui2.close()
+        self.ui3.close()
+        self.ui4.close()
         app = QApplication.instance()
         app.exit()
 
@@ -349,7 +398,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                             # flag_mark = False
                             # if reg_tup and list(reg_tup[0])[0] != '45' and list(reg_tup[0])[0] != '44':
                             #     flag_mark = True
-                            if reg_tup:  # and flag_mark is True:
+                            if reg_tup and int(reg_tup[0]) in self.rulePermissionList:  # and flag_mark is True:
                                 reg_str = str(reg_tup[1])  # 元组转换为字符串
                                 _ruleid = int(reg_tup[0])  # 获取ruleid
                                 _ruletypeid = int(reg_tup[2])  # 获取ruletypeid
@@ -549,7 +598,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                 else:
                                     break
                             if commentFlag:
-                                commentFlag = True
+                                # commentFlag = True
                                 try:
                                     list_path = glo_file_path.split('/')
                                     file_name = list_path[-1]  # 获取文件名
@@ -558,7 +607,10 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                     sql_select = "select RuleID from rule where RuleTypeID = '%s'and WordID = '%s'" % (
                                         1, 71)  # ruleType = 1--->注释
                                     rece = self.mysqlConnOperation.select_one(sql_select)
+                                    '''判断当前规则在不在规则许可列表里，如果不在，直接retern None'''
                                     print('rece', rece)
+                                    if rece[0] not in self.rulePermissionList:  # 如果不在直接返回
+                                        return None
                                     sql_err = "select * from error where Name = '%s'and RuleID = '%d' and RuleTypeID" \
                                               "= '%d'and Line = '%d'and FileID = '%s'" \
                                               % (pymysql.escape_string(file_name),
@@ -576,7 +628,8 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                         # 更新错误行代码
                                         update_sql = "update error set error.WrongCode = '%s' where error.ErrorID = '%s'" \
                                                      % (
-                                                     pymysql.escape_string(str(txt[currLineNum - 1])), int(response[0]))
+                                                         pymysql.escape_string(str(txt[currLineNum - 1])),
+                                                         int(response[0]))
                                     else:  # 错误不存在
 
                                         sql_insert = "insert into error (Name, RuleID, RuleTypeID, Line, WrongCode,FileID)" \
@@ -633,16 +686,16 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         while pos < txt_length:
             lineStr = text_list[pos]
             if '{' in lineStr:
-                newlineStr = ' ' * indent_class * space + lineStr.strip(' ')  # + '\n'   # 去掉两端空格后重新添加正确数目的空格
+                newlineStr = ' ' * indent_class * space + lineStr.strip() + '\n'  # + '\n'   # 去掉两端空格后重新添加正确数目的空格
                 indent_class += 1  # 缩进级别加1，这条语句不能提前
             elif '}' in lineStr:
                 indent_class -= 1  # 缩进级别减1，遇到'}' *先* 执行缩进级别减1
-                newlineStr = ' ' * indent_class * space + lineStr.strip(' ')  # + '\n'
+                newlineStr = ' ' * indent_class * space + lineStr.strip() + '\n'  # + '\n'
             else:
                 # if pos == txt_length-1:
                 #     newlineStr = ' ' * indent_class * space + lineStr.strip()
                 # else:
-                newlineStr = ' ' * indent_class * space + lineStr.strip(' ')  # + '\n'
+                newlineStr = ' ' * indent_class * space + lineStr.strip() + '\n'  # + '\n'
                 '''接下来判断空行'''
                 if blankLineResponse:  # 正则表达式存在：
                     reg_str = str(blankLineResponse[1])  # 元组转换为字符串
@@ -680,7 +733,9 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                             pos + 1,
                                             pymysql.escape_string(str(lineStr)),
                                             current_file_id)
-                            self.mysqlConnOperation.insert(sql_insert_1)
+                            '''该规则在许可列表里才允许插入'''
+                            if int(blankLineResponse[0]) in self.rulePermissionList:
+                                self.mysqlConnOperation.insert(sql_insert_1)
                     else:  # 不是空行
                         pass
                 else:  # 规则不存在
@@ -716,7 +771,9 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                                   currentPos,
                                   pymysql.escape_string(str(lineStr)),
                                   current_file_id)
-                    self.mysqlConnOperation.insert(sql_insert)
+                    '''如果该规则在许可列表里，则执行插入'''
+                    if int(tup_rule_id[0]) in self.rulePermissionList:
+                        self.mysqlConnOperation.insert(sql_insert)
             pos += 1
         print('\nsuojinright:-------------------------------------------------------------------------------')
         for i in range(len(newText_list)):
@@ -755,9 +812,9 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
         response, descri = self.mysqlConnOperation.select_all(sql_select)
         print('produce_right:------------->', response)
 
-        newAlignCodeList_beforeChange = newAlignCodePara
-        newAlignCodeList = newAlignCodePara  # 缩进正确的代码行列表
-        alignSpace = spacePara  # 每一级缩进等级
+        newAlignCodeList_beforeChange = newAlignCodePara[:]
+        newAlignCodeList = newAlignCodePara[:]  # 缩进正确的代码行列表 ,用[:]开辟新的地址
+        alignSpace = spacePara  # 每一级缩进空格数目
         # with open(glo_file_path, mode='r', encoding='utf8') as f:
         #     line_list = f.readlines()
         length_response = len(response)
@@ -777,7 +834,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                     newlineStr = pattern.sub(replaceStr, newAlignCodeList[lineNum - 1])
                     newAlignCodeList[lineNum - 1] = newlineStr
                 elif keyWordName in spaceLine_2:
-                    regExpStr = '[ ]*\\' + keyWordName + '*[ ]'
+                    regExpStr = '[ ]*\\' + keyWordName + '[ ]*'
                     replaceStr = ' ' + keyWordName + ' '
                     pattern = re.compile(regExpStr)
                     newlineStr = pattern.sub(replaceStr, newAlignCodeList[lineNum - 1])
@@ -790,6 +847,8 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                     pattern = re.compile(regExpStr)
                     newlineStr = pattern.sub(replaceStr, newAlignCodeList[lineNum - 1])
                     newAlignCodeList[lineNum - 1] = newlineStr
+                else:
+                    pass
             elif tupContent[2] == 3:  # 规则类型3：代码行
                 if keyWordName in codeLine_1:  # return\sizeof
                     regExpStr = keyWordName + '[ ]*([a-zA-Z_]+)'
@@ -812,11 +871,13 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                         if mark:  # 匹配 说明{后面有非空字符串 for(){ dfdf
                             jj = p1.sub('\\1', newAlignCodeList[lineNum - 1])
                             newlineStr = newlineStr + ' ' * alignSpace + blankNumStr + jj
+                            newAlignCodeList[lineNum - 1] = newlineStr
                     elif keyWordName == '}':  # interesting} 此时整体语句缩进正确，也就是说只需要把interesting再缩进一级就是规范形式
                         regExpStr = '^([ ]*)' + '(.*)' + '\\' + keyWordName + '[ ]*([\\S]*).*'
                         replaceStr = ' ' * alignSpace + '\\1' + '\\2' + '\n' + '\\1' + keyWordName + '\n'
                         pattern = re.compile(regExpStr)
                         newlineStr = pattern.sub(replaceStr, newAlignCodeList[lineNum - 1])
+                        newAlignCodeList[lineNum - 1] = newlineStr
                     else:  # ;
                         regExpStr_0 = '^([ ]*)' + '(.*)' + keyWordName + '[ ]*([\\S]*).*'
                         pattern_0 = re.compile(regExpStr_0)
@@ -830,6 +891,7 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                         else:
                             replaceStr = keyWordName + '\n' + blankNum
                         newlineStr = pattern.sub(replaceStr, newAlignCodeList[lineNum - 1])
+                        newAlignCodeList[lineNum - 1] = newlineStr
 
             elif tupContent[2] == 1:  # 规则类型1:注释
                 '''
@@ -856,14 +918,16 @@ class QMyWindow(QMainWindow, Ui_MainWindow):
                           '\nOthers: // 其它说明' \
                           '\n*/\n'
                 newlineStr = headStr + newAlignCodeList[lineNum - 1]
+                newAlignCodeList[lineNum - 1] = newlineStr
                 print('newlinestr:', newlineStr)
             elif tupContent[2] == 2:  # 规则类型2：空行
                 newAlignCodeList[lineNum - 1] = '-1'
             else:
                 pass
-            newAlignCodeList[lineNum - 1] = newlineStr
+            # newAlignCodeList[lineNum - 1] = newlineStr
         print('正确代码：')
         global rightCodeList, r1
+        # ----------------------------------------------6.9
         rightCodeList = newAlignCodeList
         r1 = newAlignCodeList_beforeChange
         for i in range(len(newAlignCodeList)):
