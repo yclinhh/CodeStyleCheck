@@ -52,7 +52,8 @@ _keyWord = []  # 保存当前行中关键字的ID,
 _lineCount = 0  # 记录当前是第几行
 _judgeStr = ''  # 保存当前要判断的字符串
 _chBegin = 0  # 当前判断开始，第一个判断字符的位置
-li = []  # 记录都分析出了哪些保留字界符操作符
+li = []  # 记录一行都分析出了哪些保留字界符操作符
+_allLineLi = []  # 记录所有行的标识符
 _commentLineNumTab = []  # 保存注释出现的行号
 #  把整个代码文件都扫描完在进行规则匹配，这样匹配时再按行读取匹配，词法分析还是一个字符一个字符分析
 #  把每一行匹配单词的ID保存为一个列表存起来--------------------------------
@@ -67,13 +68,15 @@ def Scanner(para):
     :return:
     """
     forFlag = False  # for ( ; ; ) 标志位
-    global _lineErr, _recordTab, _keyWord, _lineCount,  _judgeStr, _chBegin, li, _commentLineNumTab
+    global _lineErr, _recordTab, _keyWord, _lineCount,  _judgeStr, _chBegin, li, _commentLineNumTab, _allLineLi
     _recordTab = []  # 初始化
     _commentLineNumTab = []
     _chBegin = 0  # 判断的字符串的起始位置
     _lineCount = 0  # 初始化
     _lineCount += 1  # 行号
     _judgeStr = ''  # 字符串清空
+    _allLineLi = []
+    li = copy.deepcopy(li)  # 深拷贝
     li.clear()
     _keyWord = copy.deepcopy(_keyWord)  # 深拷贝
     _keyWord.clear()
@@ -106,6 +109,9 @@ def Scanner(para):
                     _recordTab.append(_keyWord)
                     _keyWord = copy.deepcopy(_keyWord)  # 深拷贝
                     _keyWord.clear()  # 关键字列表清空（因为只存当前行的关键字ID,当前行变化了）
+                    _allLineLi.append(li)
+                    li = copy.deepcopy(li)
+                    li.clear()
                 while code[pos] != '*' or code[pos+1] != '/':
                     pos += 1
                     if '\n' == code[pos]:
@@ -120,6 +126,9 @@ def Scanner(para):
                         _recordTab.append(_keyWord)  # 错误记录表记录添加当前检测出的ID列表，ID列表可能为空
                         _keyWord = copy.deepcopy(_keyWord)  # 深拷贝
                         _keyWord.clear()  # 关键字列表清空（因为只存当前行的关键字ID,当前行变化了）
+                        _allLineLi.append(li)
+                        li = copy.deepcopy(li)
+                        li.clear()
                     # try:
                     #     if pos < length:
                     #         pass
@@ -141,6 +150,9 @@ def Scanner(para):
                 _recordTab.append(_keyWord)
                 _keyWord = copy.deepcopy(_keyWord)  # 深拷贝
                 _keyWord.clear()
+                _allLineLi.append(li)
+                li = copy.deepcopy(li)
+                li.clear()
             # elif code[pos+1] == ' ' or code[pos+1].isdigit() or code[pos+1].isalpha() or code[pos+1] in word:
             #     _keyWord.append(word.get('/'))          # 认为是除号
             # else:  # 否则认为是除号
@@ -152,6 +164,10 @@ def Scanner(para):
             # print("行号是：{0}，这一行分析出的单词码是：{1}，单词表是{2}".format(_lineCount, _keyWord, _recordTab))
             _keyWord = copy.deepcopy(_keyWord)  # 深拷贝
             _keyWord.clear()
+            # ----------------------
+            _allLineLi.append(li)
+            li = copy.deepcopy(li)
+            li.clear()
             _judgeStr = ''
             forFlag = False
         elif code[pos] == '\t' or code[pos] == '\r' or code[pos] == '\v':  # 过滤制表符、回车符、垂直制表符
@@ -254,6 +270,9 @@ def Scanner(para):
     # print("行号是：{0}，这一行分析出的单词码是：{1}，单词表是{2}".format(_lineCount, _keyWord, _recordTab))
     _keyWord = copy.deepcopy(_keyWord)  # 深拷贝
     _keyWord.clear()
+    _allLineLi.append(li)
+    li = copy.deepcopy(li)
+    li.clear()
     _judgeStr = ''
     print("扫描完毕")
     print(_recordTab)
@@ -266,7 +285,7 @@ def Scanner(para):
         if sec == 15:
             sec = 0
             print('\n')
-    return _recordTab, _commentLineNumTab
+    return _recordTab, _commentLineNumTab, _allLineLi
 
 
 if __name__ == '__main__':

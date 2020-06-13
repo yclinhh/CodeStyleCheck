@@ -102,6 +102,10 @@ class Ui_MainWindow(object):
         self.action_compare.setObjectName("action_compare")
         self.action_save = QtWidgets.QAction(MainWindow)
         self.action_save.setObjectName("action_save")
+        # 增加一键删除文件错误信息
+        self.action_deleteErrorInfo = QtWidgets.QAction(MainWindow)
+        self.action_deleteErrorInfo.setObjectName("action_deleteErrorInfo")
+
         self.menu.addAction(self.action_open)
         self.menu.addAction(self.action_save)
         self.menu.addAction(self.action_close)
@@ -113,6 +117,8 @@ class Ui_MainWindow(object):
         self.menu_3.addAction(self.action_run)
         self.menu_3.addAction(self.action_result)
         self.menu_3.addAction(self.action_compare)
+        self.menu_3.addAction(self.action_deleteErrorInfo)
+
         self.menubar.addAction(self.menu.menuAction())
         self.menubar.addAction(self.menu_2.menuAction())
         self.menubar.addAction(self.menu_3.menuAction())
@@ -141,3 +147,4 @@ class Ui_MainWindow(object):
         self.action_result.setText(_translate("MainWindow", "查看结果"))
         self.action_compare.setText(_translate("MainWindow", "分析对比"))
         self.action_save.setText(_translate("MainWindow", "保存"))
+        self.action_deleteErrorInfo.setText((_translate("MainWindow", "清空当前文件错误信息")))

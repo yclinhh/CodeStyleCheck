@@ -60,7 +60,7 @@ class MyResult(QWidget):
         data, descr = self.ConnMysqlOne.select_all(sql)
         # 数据列名
         # col_name = [tup[0] for tup in descr]
-        col_name = ['文件名称', '规则名称', '建议', '规则类型', '行号', '错误代码', '是否改正']
+        col_name = ['文件名称', '规则名称', '建议', '规则类型', '行号', '错误代码', '此错误是否已经改正']
         # 表格行数与列数
         row = len(data)
         vol = len(col_name)

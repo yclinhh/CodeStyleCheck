@@ -15,10 +15,11 @@ class AnalyzeCompare(QWidget, Ui_Form):
         super(AnalyzeCompare, self).__init__()
         self.setupUi(self)
 
-    def deal_analyzeCompare_slot(self, pathStr, codeList):
+    def deal_analyzeCompare_slot(self, pathStr, codeList, stuid):
 
         path_str = pathStr
         code = codeList
+        studentID = stuid
         print('接收--路径与正确代码--成功!')
         self.textBrowser.selectAll()
         self.textBrowser.clear()
@@ -31,7 +32,7 @@ class AnalyzeCompare(QWidget, Ui_Form):
         except Exception as e:
             print(e)
             traceback.print_exc()
+
         for i in range(len(code)):
             if code[i] != '-1':
                 self.textBrowser_2.append(code[i].rstrip('\n'))
-
